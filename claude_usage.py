@@ -11,11 +11,13 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import traceback
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
+from typing import Optional
 
 if os.name == "nt":  # Windows のコンソール既定(cp932)では一部文字が出力できないため UTF-8 に切り替える
     for _s in (sys.stdout, sys.stderr):
@@ -27,8 +29,8 @@ if os.name == "nt":  # Windows のコンソール既定(cp932)では一部文字
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from cusage import __version__, hook as hooklib  # noqa: E402
-from cusage.aggregate import Filters, Report, build_report, resolve_tz  # noqa: E402
-from cusage.logs import default_claude_dirs  # noqa: E402
+from cusage.aggregate import Filters, Report, Turn, build_report, parse_ts, resolve_tz  # noqa: E402
+from cusage.logs import Call, Prompt, default_claude_dirs  # noqa: E402
 from cusage.pricing import Pricing  # noqa: E402
 from cusage.store import Store, sync  # noqa: E402
 
@@ -65,6 +67,8 @@ def add_report_args(p: argparse.ArgumentParser) -> None:
     g.add_argument("--timezone", metavar="TZ", help="集計タイムゾーン（例 Asia/Tokyo, UTC）。既定: OS のローカル")
     g.add_argument("--prompt-chars", type=int, default=0, metavar="N",
                    help="ターン明細に載せるプロンプト先頭の文字数（既定 0 = 載せない。共有するレポートでは 0 推奨）")
+    g.add_argument("--no-turn-summary", action="store_true",
+                   help="hook: チャット 1 往復ごとのトークン数・概算金額の表示をやめる（レポート更新のみ行う）")
     g.add_argument("-q", "--quiet", action="store_true", help="コンソール出力を出さない")
 
 
@@ -121,7 +125,8 @@ def check_args(args) -> None:
     make_filters(args)
 
 
-def generate(args, log=lambda _m: None) -> tuple[Report, list[str]]:
+def load_data(args, log=lambda _m: None) -> tuple[list[Call], list[Prompt], Pricing, list[str]]:
+    """ログを同期して蓄積データを読み出す。(calls, prompts, pricing, ログの場所)"""
     home = data_home()
     dirs = [os.path.abspath(os.path.expanduser(d)) for d in args.claude_dir] if args.claude_dir else default_claude_dirs()
     pricing = Pricing.load(args.pricing, args.discount)
@@ -138,8 +143,15 @@ def generate(args, log=lambda _m: None) -> tuple[Report, list[str]]:
         calls, prompts = store.load_calls(), store.load_prompts()
     finally:
         store.close()
+    return calls, prompts, pricing, dirs
+
+
+def generate(args, log=lambda _m: None, data=None) -> tuple[Report, list[str]]:
+    """data: load_data の結果（すでに読み込み済みなら再利用する）"""
+    calls, prompts, pricing, dirs = data or load_data(args, log)
     rep = build_report(calls, prompts, pricing, args.timezone, make_filters(args),
                        max(0, args.prompt_chars), sources=dirs)
+    home = data_home()
     out_dir = os.path.abspath(os.path.expanduser(args.out_dir)) if args.out_dir else os.path.join(home, "reports")
     written = []
     formats = {x.strip().lower() for x in args.formats.split(",") if x.strip()} - {"none"}
@@ -192,6 +204,54 @@ def _dur(sec: float) -> str:
     return f"{h}時間{m:02d}分" if h else f"{m}分{s:02d}秒" if m else f"{s}秒"
 
 
+def latest_turn(calls: list[Call], prompts: list[Prompt], pricing: Pricing, session: str,
+                tz_name: Optional[str]) -> Optional[Report]:
+    """指定セッションの最新ターンだけを含むレポート（絞り込みなし）。無ければ None。"""
+    rep = build_report([c for c in calls if c.session == session],
+                       [p for p in prompts if p.session == session], pricing, tz_name)
+    if not rep.turns:
+        return None
+    last = max(rep.turns, key=lambda t: t.start)
+    rep.turns = [last]
+    return rep
+
+
+def month_cost(calls: list[Call], pricing: Pricing, tz_name: Optional[str],
+               now: Optional[datetime] = None) -> tuple[str, float, float]:
+    """(当月 'YYYY-MM', 概算金額, 公開価格ベース)。全セッション・全プロジェクトの合計（絞り込みなし）。"""
+    tz, _ = resolve_tz(tz_name)
+
+    def local(dt: datetime) -> datetime:
+        return dt.astimezone(tz) if tz is not None else dt.astimezone()
+    month = local(now or datetime.now(timezone.utc)).strftime("%Y-%m")
+    net = listed = 0.0
+    for c in calls:
+        if local(parse_ts(c.ts)).strftime("%Y-%m") == month:
+            l, n = pricing.cost(c)
+            listed += l
+            net += n
+    return month, net, listed
+
+
+def format_turn_summary(turn: Turn, rep: Report, month: Optional[tuple[str, float, float]] = None) -> str:
+    """チャット 1 往復分の使用量と概算金額を 1 行にまとめる（Claude Code の画面に出す文言）。"""
+    b = turn.bucket
+    parts = [f"トークン {_tok(b.tokens)}"
+             f"（入力 {_tok(b.input)} / 出力 {_tok(b.output)} / キャッシュ書込 {_tok(b.cache_write)} / 読込 {_tok(b.cache_read)}）",
+             f"概算 ${b.cost:,.2f}" + (f"（公開価格 ${b.cost_list:,.2f}）" if b.discount > 0 else ""),
+             f"API {b.calls:,} 回"]
+    if turn.duration is not None:
+        parts.append(f"所要 {_dur(turn.duration)}")
+    text = "今回のターン: " + " ・ ".join(parts)
+    if month:
+        label, net, listed = month
+        text += (f"\n当月（{label}）の概算合計: ${net:,.2f}"
+                 + (f"（公開価格 ${listed:,.2f}）" if listed - net > 1e-9 else ""))
+    if rep.unpriced_models:
+        text += f"\n※単価表に無いモデルは $0 で計算: {', '.join(rep.unpriced_models)}"
+    return text
+
+
 def print_summary(rep: Report, written: list[str]) -> None:
     t = rep.total
     if not rep.first:
@@ -236,22 +296,41 @@ def cmd_report(args) -> int:
     return 0
 
 
+def _log_failure(home: str) -> None:
+    try:
+        os.makedirs(home, exist_ok=True)
+        with open(os.path.join(home, "hook.log"), "a", encoding="utf-8") as fh:
+            fh.write(f"--- {datetime.now():%Y-%m-%d %H:%M:%S}\n{traceback.format_exc()}\n")
+    except OSError:
+        pass
+
+
 def cmd_hook(args) -> int:
-    """Stop フック: 何があってもセッションを妨げない（常に 0 で終了し、失敗は hook.log に残す）。"""
+    """Stop フック: 何があってもセッションを妨げない（常に 0 で終了し、失敗は hook.log に残す）。
+
+    1. ログを同期し、今終わったターン（フック入力の session_id の最新ターン）の使用量と概算金額を
+       JSON の systemMessage として出力する（Claude Code の画面に表示される）。
+    2. レポート（HTML / xlsx）を更新する。表示を先にするので、レポート生成が失敗しても表示される。
+    """
     home = data_home()
-    # フックの入力 JSON(stdin)は使わない（全ログを増分同期するため）。読まないので端末や閉じない pipe でも固まらない。
+    session = hooklib.read_input().get("session_id")
     try:
         with hooklib.single_instance(os.path.join(home, ".hook.lock")) as ok:
             if ok:
                 args.quiet = True
-                generate(args)
+                data = load_data(args)
+                if not args.no_turn_summary and isinstance(session, str) and session:
+                    try:
+                        rep = latest_turn(data[0], data[1], data[2], session, args.timezone)
+                        if rep:
+                            print(json.dumps({"systemMessage": format_turn_summary(
+                                rep.turns[0], rep, month_cost(data[0], data[2], args.timezone))},
+                                             ensure_ascii=False), flush=True)
+                    except Exception:
+                        _log_failure(home)
+                generate(args, data=data)
     except BaseException:
-        try:
-            os.makedirs(home, exist_ok=True)
-            with open(os.path.join(home, "hook.log"), "a", encoding="utf-8") as fh:
-                fh.write(f"--- {datetime.now():%Y-%m-%d %H:%M:%S}\n{traceback.format_exc()}\n")
-        except OSError:
-            pass
+        _log_failure(home)
     return 0
 
 

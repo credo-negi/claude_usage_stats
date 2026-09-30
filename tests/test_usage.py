@@ -7,6 +7,7 @@ import contextlib
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -437,6 +438,59 @@ class CliTest(unittest.TestCase):
                                  os.path.join(tmp, "nope.csv"), env={"CLAUDE_USAGE_HOME": home})
             self.assertEqual(rc, 0)                                                     # 失敗してもセッションを妨げない
             self.assertIn("Traceback", read_text(os.path.join(home, "hook.log")))
+
+    def test_hook_prints_latest_turn_of_the_session(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = make_config(tmp)
+            env = dict(os.environ, CLAUDE_USAGE_HOME=os.path.join(tmp, "home"))
+            cmd = [sys.executable, os.path.join(ROOT, "claude_usage.py"), "hook", "--claude-dir", cfg,
+                   "--timezone", "Asia/Tokyo", "--formats", "none"]
+
+            def run(stdin, *extra):
+                return subprocess.run(cmd + list(extra), input=stdin, env=env, capture_output=True,
+                                      text=True, timeout=60)
+            r = run(json.dumps({"session_id": SESSION}))
+            self.assertEqual(r.returncode, 0)
+            msg = json.loads(r.stdout)["systemMessage"]             # 画面表示用の JSON（1 行）
+            self.assertIn("今回のターン", msg)
+            self.assertIn("API 4 回", msg)                          # 最新ターン(2)だけ。ターン1の 2 回は含まない
+            self.assertIn("所要 7秒", msg)
+            self.assertIn("claude-unknown-9", msg)                  # 単価が無いモデルの注意
+            self.assertRegex(msg, r"当月（\d{4}-\d{2}）の概算合計: \$")
+            # 表示しない条件: session_id なし / 未知のセッション / 無効化オプション / 壊れた入力
+            for stdin, extra in (("{}", ()), (json.dumps({"session_id": "nope"}), ()), ("not json", ()),
+                                 (json.dumps({"session_id": SESSION}), ("--no-turn-summary",))):
+                r = run(stdin, *extra)
+                self.assertEqual((r.returncode, r.stdout), (0, ""), (stdin, extra))
+
+    def test_format_turn_summary_shows_list_price_only_with_discount(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            s = store.Store(os.path.join(tmp, "u.db"))
+            store.sync(s, [make_config(tmp)])
+            calls, prompts = s.load_calls(), s.load_prompts()
+            s.close()
+        for disc, expect in ((0.0, False), (0.15, True)):
+            pr = pricing.Pricing.load(discount_override=disc)
+            rep = claude_usage.latest_turn(calls, prompts, pr, SESSION, "Asia/Tokyo")
+            text = claude_usage.format_turn_summary(rep.turns[0], rep)
+            self.assertEqual("公開価格" in text, expect, text)
+        self.assertIsNone(claude_usage.latest_turn(calls, prompts, pr, "nope", "UTC"))
+
+        # 当月合計: 全ターンの合計と一致し、月をまたぐ 9/1 15:30Z(= JST 9/2) も当月に入る。別の月は 0
+        from datetime import datetime, timezone
+        pr = pricing.Pricing.load(discount_override=0.15)
+        now = datetime(2026, 9, 20, tzinfo=timezone.utc)
+        total = aggregate.build_report(calls, prompts, pr, "Asia/Tokyo").total
+        label, net, listed = claude_usage.month_cost(calls, pr, "Asia/Tokyo", now)
+        self.assertEqual(label, "2026-09")
+        self.assertAlmostEqual(net, total.cost)
+        self.assertAlmostEqual(listed, total.cost_list)
+        self.assertEqual(claude_usage.month_cost(calls, pr, "Asia/Tokyo", datetime(2026, 10, 1, tzinfo=timezone.utc))[1:], (0.0, 0.0))
+        # UTC の 8/31 23:30 は JST では 9/1 → 月の区切りはタイムゾーンで決まる
+        self.assertEqual(claude_usage.month_cost(calls, pr, "Asia/Tokyo", datetime(2026, 8, 31, 16, tzinfo=timezone.utc))[0], "2026-09")
+        rep = claude_usage.latest_turn(calls, prompts, pr, SESSION, "Asia/Tokyo")
+        text = claude_usage.format_turn_summary(rep.turns[0], rep, (label, net, listed))
+        self.assertIn(f"当月（2026-09）の概算合計: ${net:,.2f}（公開価格 ${listed:,.2f}）", text)
 
     def test_install_hook_rejects_bad_options(self):
         with tempfile.TemporaryDirectory() as tmp:

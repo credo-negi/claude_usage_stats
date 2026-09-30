@@ -10,6 +10,7 @@ import os
 import shlex
 import subprocess
 import sys
+import threading
 import time
 from contextlib import contextmanager
 from typing import Iterator, Optional
@@ -122,6 +123,40 @@ def uninstall(path: str, dry_run: bool = False) -> tuple[int, Optional[str]]:
     if removed and not dry_run:
         return removed, _save(path, data)
     return removed, None
+
+
+def read_input(timeout: float = 2.0) -> dict:
+    """フックの入力 JSON（stdin。session_id など）を読む。読めなければ {}。
+
+    閉じられない pipe や端末でも固まらないよう、別スレッドで読んでタイムアウトで諦める。
+    sys.stdin ではなく fd を直接読む（デーモンスレッドが残ったまま終了しても安全なため）。
+    """
+    try:
+        if sys.stdin is None or sys.stdin.isatty():
+            return {}
+        fd = sys.stdin.fileno()
+    except (OSError, ValueError, AttributeError):
+        return {}
+    chunks: list[bytes] = []
+
+    def reader() -> None:
+        try:
+            while True:
+                b = os.read(fd, 65536)
+                if not b:
+                    return
+                chunks.append(b)
+        except OSError:
+            pass
+
+    t = threading.Thread(target=reader, daemon=True)
+    t.start()
+    t.join(timeout)
+    try:
+        data = json.loads(b"".join(chunks).decode("utf-8", errors="replace"))
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 @contextmanager
