@@ -5,115 +5,173 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__TITLE__</title>
 <style>
+/* Material Design 3 ベース。シードカラー #F5B0A3 から Material の TonalSpot（2021 仕様）で生成したカラーロール。
+   トーンの割り当ては M3 標準（ライト: primary=P40 / surface=N98 ほか、ダーク: primary=P80 / surface=N6 ほか）。 */
 :root {
   color-scheme: light;
-  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
-  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10); --hover: rgba(11,11,11,.05);
-  --accent: #2a78d6; --good-text: #006300;
-  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
-  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948; --s-other: #a9a79f;
-  --warn-bg: #fff4d6; --warn-ink: #5c4200;
+  --primary: #904b3e; --on-primary: #ffffff;
+  --primary-container: #ffdad4; --on-primary-container: #3a0a04;
+  --secondary-container: #ffdad4; --on-secondary-container: #2c1511;
+  --tertiary-container: #fae0a6; --on-tertiary-container: #251a00;
+  --surface: #fff8f6; --surface-low: #fff0ee; --surface-mid: #fceae6; --surface-high: #f7e4e1;
+  --on-surface: #231918; --on-surface-variant: #534340;
+  --outline: #857370; --outline-variant: #d8c2be; --muted: #6c5b57;
+  --state-hover: rgba(144,75,62,.08); --state-press: rgba(144,75,62,.12);
+  /* チャートのカテゴリ色: primary と同じ HCT（トーン50・彩度36〜40）で色相だけ振ったもの */
+  --s1: #ad6355; --s2: #4e79b1; --s3: #458453; --s4: #967117;
+  --s5: #9167a6; --s6: #008583; --s7: #b4607f; --s8: #707d2e; --s-other: #a29390;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.15);
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --hover: rgba(255,255,255,.07);
-    --accent: #3987e5; --good-text: #0ca30c;
-    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; --s-other: #6d6b65;
-    --warn-bg: #3a2f10; --warn-ink: #f3d98b;
+    --primary: #ffb4a6; --on-primary: #561e15;
+    --primary-container: #733429; --on-primary-container: #ffdad4;
+    --secondary-container: #5d3f3a; --on-secondary-container: #ffdad4;
+    --tertiary-container: #554519; --on-tertiary-container: #fae0a6;
+    --surface: #1a1110; --surface-low: #231918; --surface-mid: #271d1c; --surface-high: #322826;
+    --on-surface: #f1dfdb; --on-surface-variant: #d8c2be;
+    --outline: #a08c89; --outline-variant: #534340; --muted: #bca7a3;
+    --state-hover: rgba(255,180,166,.08); --state-press: rgba(255,180,166,.12);
+    --s1: #f79f8f; --s2: #8eb8f4; --s3: #83c58d; --s4: #dbb052;
+    --s5: #d4a5e9; --s6: #61c6c3; --s7: #f2a0bd; --s8: #afbe66; --s-other: #7d6f6c;
+    --shadow: 0 1px 3px rgba(0,0,0,.6), 0 4px 8px 3px rgba(0,0,0,.4);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
-  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --hover: rgba(255,255,255,.07);
-  --accent: #3987e5; --good-text: #0ca30c;
-  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; --s-other: #6d6b65;
-  --warn-bg: #3a2f10; --warn-ink: #f3d98b;
+  --primary: #ffb4a6; --on-primary: #561e15;
+  --primary-container: #733429; --on-primary-container: #ffdad4;
+  --secondary-container: #5d3f3a; --on-secondary-container: #ffdad4;
+  --tertiary-container: #554519; --on-tertiary-container: #fae0a6;
+  --surface: #1a1110; --surface-low: #231918; --surface-mid: #271d1c; --surface-high: #322826;
+  --on-surface: #f1dfdb; --on-surface-variant: #d8c2be;
+  --outline: #a08c89; --outline-variant: #534340; --muted: #bca7a3;
+  --state-hover: rgba(255,180,166,.08); --state-press: rgba(255,180,166,.12);
+  --s1: #f79f8f; --s2: #8eb8f4; --s3: #83c58d; --s4: #dbb052;
+  --s5: #d4a5e9; --s6: #61c6c3; --s7: #f2a0bd; --s8: #afbe66; --s-other: #7d6f6c;
+  --shadow: 0 1px 3px rgba(0,0,0,.6), 0 4px 8px 3px rgba(0,0,0,.4);
+}
+:root {   /* チャート・表が参照する別名 */
+  --ink: var(--on-surface); --ink-2: var(--on-surface-variant);
+  --grid: var(--outline-variant); --axis: var(--outline); --hover: var(--state-hover);
+  --card: var(--surface-low); --accent: var(--primary);
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: var(--page); color: var(--ink);
-  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+  margin: 0; background: var(--surface); color: var(--on-surface);
+  font: 400 14px/20px Roboto, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+  letter-spacing: .25px;
 }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-h1 { font-size: 20px; font-weight: 600; margin: 0 0 2px; }
-.sub { color: var(--ink-2); font-size: 13px; }
-h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
-.hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
-button, select, input { font: inherit; color: var(--ink); }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 16px 16px 64px; }
+header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 8px 0 12px;
+}
+h1 { font-size: 24px; line-height: 32px; font-weight: 400; letter-spacing: 0; margin: 0; }
+.sub { color: var(--on-surface-variant); font-size: 13px; line-height: 20px; }
+h2 { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px; margin: 0 0 2px; }
+.hint { color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; margin: 0 0 12px; }
+button, select, input { font: inherit; color: var(--on-surface); letter-spacing: inherit; }
+
+/* ボタン: 通常は outlined、テーマ切替は tonal */
 .btn {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  padding: 5px 12px; cursor: pointer; min-height: 32px;
+  background: transparent; border: 1px solid var(--outline); border-radius: 20px;
+  padding: 0 16px; cursor: pointer; min-height: 40px; color: var(--primary); font-weight: 500; letter-spacing: .1px;
 }
-.btn:hover { background: var(--hover); }
-.btn[aria-pressed="true"], .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .hit:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px;
+.btn:hover { background: var(--state-hover); }
+.btn:active { background: var(--state-press); }
+.btn.tonal { background: var(--secondary-container); color: var(--on-secondary-container); border-color: transparent; }
+.btn.tonal:hover { background: var(--secondary-container); box-shadow: var(--shadow); }
+/* フィルターチップ（選択時は secondary container + チェック） */
+.chip {
+  background: transparent; border: 1px solid var(--outline); border-radius: 8px;
+  padding: 0 12px; min-height: 32px; cursor: pointer; font-weight: 500; font-size: 14px; letter-spacing: .1px;
+  color: var(--on-surface-variant);
 }
-.filters { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 20px 0 16px; }
-.group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
-.group > label { color: var(--ink-2); font-size: 12px; margin-right: 2px; }
+.chip:hover { background: var(--state-hover); }
+.chip[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); border-color: transparent; }
+.chip[aria-pressed="true"]::before { content: "\2713\00a0"; }
+/* セグメントボタン */
+.segmented { display: inline-flex; }
+.segmented > button {
+  background: transparent; border: 1px solid var(--outline); padding: 0 16px; min-height: 40px; cursor: pointer;
+  color: var(--on-surface); font-weight: 500; letter-spacing: .1px; margin-left: -1px;
+}
+.segmented > button:first-child { border-radius: 20px 0 0 20px; margin-left: 0; }
+.segmented > button:last-child { border-radius: 0 20px 20px 0; }
+.segmented > button:hover { background: var(--state-hover); }
+.segmented > button[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
+.segmented > button[aria-pressed="true"]::before { content: "\2713\00a0"; }
+.btn:focus-visible, .chip:focus-visible, .segmented > button:focus-visible, select:focus-visible, input:focus-visible,
+summary:focus-visible, .hit:focus-visible, th.sortable:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; margin: 8px 0 20px; }
+.group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.group > label { color: var(--on-surface-variant); font-size: 12px; letter-spacing: .4px; }
+/* outlined テキストフィールド風のセレクト・日付入力 */
 select, input[type="date"] {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  padding: 4px 8px; min-height: 32px; max-width: 260px;
+  background: transparent; border: 1px solid var(--outline); border-radius: 4px;
+  padding: 0 12px; min-height: 40px; max-width: 260px;
 }
+select:hover, input[type="date"]:hover { border-color: var(--on-surface); }
+select:focus, input[type="date"]:focus { border-color: var(--primary); }
+select option { background: var(--surface-high); color: var(--on-surface); }
 .warn {
-  background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px;
-  padding: 8px 12px; margin: 0 0 12px; font-size: 13px;
+  background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 12px;
+  padding: 12px 16px; margin: 0 0 12px; font-size: 14px;
 }
 .hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-end; margin: 8px 0 20px; }
-.hero .big { font-size: 56px; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; }
-.hero .lbl { color: var(--ink-2); font-size: 13px; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
-.tile .k { color: var(--ink-2); font-size: 12px; }
-.tile .v { font-size: 24px; font-weight: 600; line-height: 1.25; }
-.tile .d { color: var(--muted); font-size: 12px; }
+.hero .big { font-size: 52px; font-weight: 400; line-height: 60px; letter-spacing: 0; color: var(--primary); }
+.hero .lbl { color: var(--on-surface-variant); font-size: 14px; font-weight: 500; letter-spacing: .1px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface-mid); border-radius: 12px; padding: 12px 16px; }
+.tile .k { color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .5px; font-weight: 500; }
+.tile .v { font-size: 24px; font-weight: 400; line-height: 32px; letter-spacing: 0; }
+.tile .d { color: var(--muted); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--outline-variant); border-radius: 16px; padding: 20px 16px 16px; min-width: 0; }
 .card.wide { grid-column: 1 / -1; }
-@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } .hero .big { font-size: 44px; } }
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 6px; font-size: 12px; color: var(--ink-2); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } .hero .big { font-size: 44px; line-height: 52px; } }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 6px; font-size: 12px; color: var(--on-surface-variant); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 svg { display: block; width: 100%; height: auto; overflow: visible; }
-svg text { font: 11px system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif; fill: var(--muted); }
-svg text.val { fill: var(--ink); font-weight: 600; }
-svg text.lab { fill: var(--ink-2); font-size: 12px; }
+svg text { font: 11px Roboto, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif; fill: var(--muted); }
+svg text.val { fill: var(--on-surface); font-weight: 500; }
+svg text.lab { fill: var(--on-surface-variant); font-size: 12px; }
 .seg { transition: opacity .1s; }
 .seg:hover, .hit:hover ~ .seg { opacity: .85; }
 .hit { fill: transparent; cursor: default; }
-.hit:hover, .hit:focus { fill: var(--hover); }
-details { margin-top: 10px; }
-summary { cursor: pointer; color: var(--ink-2); font-size: 12px; width: fit-content; border-radius: 4px; }
-.twrap { max-height: 320px; overflow: auto; margin-top: 8px; border: 1px solid var(--border); border-radius: 8px; }
-table { border-collapse: collapse; width: 100%; font-size: 12px; }
-th, td { padding: 5px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+.hit:hover, .hit:focus { fill: var(--state-hover); }
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--primary); font-size: 14px; font-weight: 500; letter-spacing: .1px; width: fit-content; border-radius: 4px; padding: 2px 4px; }
+.twrap { max-height: 320px; overflow: auto; margin-top: 8px; border: 1px solid var(--outline-variant); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--outline-variant); }
 th:first-child, td:first-child, th.l, td.l { text-align: left; }
-thead th { position: sticky; top: 0; background: var(--surface); color: var(--ink-2); font-weight: 600; }
+thead th { position: sticky; top: 0; background: var(--surface-mid); color: var(--on-surface-variant); font-weight: 500; letter-spacing: .1px; }
 td.num, th.num { font-variant-numeric: tabular-nums; }
 th.sortable { cursor: pointer; user-select: none; }
-th.sortable:hover { color: var(--ink); }
-td.prompt { max-width: 360px; overflow: hidden; text-overflow: ellipsis; text-align: left; color: var(--ink-2); }
+th.sortable:hover { color: var(--on-surface); background: var(--surface-high); }
+td.prompt { max-width: 360px; overflow: hidden; text-overflow: ellipsis; text-align: left; color: var(--on-surface-variant); }
+tbody tr:hover td { background: var(--state-hover); }
 tr:last-child td { border-bottom: 0; }
-.more { margin-top: 10px; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
+.more { margin-top: 12px; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
 #tip {
   position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 320px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 8px 10px; font-size: 12px;
+  background: var(--surface-high); color: var(--on-surface); border-radius: 12px;
+  box-shadow: var(--shadow); padding: 8px 12px; font-size: 12px; line-height: 16px;
 }
-#tip .th { color: var(--ink-2); margin-bottom: 4px; }
+#tip .th { color: var(--on-surface-variant); margin-bottom: 4px; font-weight: 500; }
 #tip .tr { display: flex; align-items: center; gap: 8px; line-height: 1.6; }
-#tip .tr b { color: var(--ink); font-weight: 600; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
-#tip .tr span { color: var(--ink-2); }
+#tip .tr b { color: var(--on-surface); font-weight: 500; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+#tip .tr span { color: var(--on-surface-variant); }
 #tip .key { width: 10px; height: 3px; border-radius: 2px; flex: none; }
 .empty { color: var(--muted); padding: 24px 0; text-align: center; }
-footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 footer p { margin: 4px 0; }
 .busy { opacity: .6; }
 @media print { .filters, .btn, details { display: none; } body { background: #fff; } }
@@ -126,7 +184,7 @@ footer p { margin: 4px 0; }
       <h1>__TITLE__</h1>
       <div class="sub" id="meta"></div>
     </div>
-    <button class="btn" id="theme" type="button" aria-label="配色の切り替え">配色: 自動</button>
+    <button class="btn tonal" id="theme" type="button" aria-label="配色の切り替え">配色: 自動</button>
   </header>
 
   <div id="warnings"></div>
@@ -139,9 +197,9 @@ footer p { margin: 4px 0; }
     </div>
     <div class="group"><label for="proj">プロジェクト</label><select id="proj"></select></div>
     <div class="group"><label for="model">モデル</label><select id="model"></select></div>
-    <div class="group" role="group" aria-label="指標">
-      <button class="btn" type="button" data-metric="cost" aria-pressed="true">金額(USD)</button>
-      <button class="btn" type="button" data-metric="tokens" aria-pressed="false">トークン</button>
+    <div class="segmented" role="group" aria-label="指標">
+      <button type="button" data-metric="cost" aria-pressed="true">金額(USD)</button>
+      <button type="button" data-metric="tokens" aria-pressed="false">トークン</button>
     </div>
   </div>
 
@@ -426,6 +484,12 @@ function seriesFor(rows, keyOf, catIndex, ncats) {
 }
 
 function render() {
+  /* 全カードを作り直す間にページが一瞬縮み、スクロール位置が先頭側へ丸められるので、描画後に戻す */
+  var x = window.pageXOffset, y = window.pageYOffset;
+  renderAll();
+  if (window.pageYOffset !== y || window.pageXOffset !== x) window.scrollTo(x, y);
+}
+function renderAll() {
   hideTip();
   var rows = selectFacts();
   var root = document.getElementById('root');
@@ -633,7 +697,7 @@ function init() {
 
   var rg = document.getElementById('ranges');
   [['all', '全期間'], ['month', '今月'], ['7', '直近7日'], ['30', '直近30日'], ['90', '直近90日']].forEach(function (r) {
-    var b = el('button', { 'class': 'btn', type: 'button', 'data-range': r[0], text: r[1], 'aria-pressed': r[0] === state.range ? 'true' : 'false' });
+    var b = el('button', { 'class': 'chip', type: 'button', 'data-range': r[0], text: r[1], 'aria-pressed': r[0] === state.range ? 'true' : 'false' });
     b.onclick = function () { state.range = r[0]; state.from = state.to = ''; document.getElementById('from').value = ''; document.getElementById('to').value = ''; sync(); };
     rg.appendChild(b);
   });
