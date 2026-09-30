@@ -1,0 +1,29 @@
+# 単価表（USD / 100万トークン・定価）。2026-09-25 時点の Anthropic API 公開価格。Excel で編集して保存してよい（UTF-8）。
+# '#' で始まる行はコメント。model は前方一致（最長一致）で、日付付き ID や Bedrock/Vertex 形式にも当たる。
+# cache_write_5m / cache_write_1h / cache_read が空欄なら input から導出する（1.25倍 / 2倍 / 0.1倍）。
+# fast_multiplier: usage.speed が fast のときの倍率（空欄 = 1.0）。
+# discount_rate: 契約割引率。0.15 = 15% 引き（15 と書くとエラー）。空欄 = 既定値。
+# model が * の行は、全モデルの既定の割引率を discount_rate に指定する（モデル行の discount_rate が優先）。
+# Claude Enterprise の契約単価が公開価格と異なる場合は、この表の単価か discount_rate を書き換える。
+model,input_per_mtok,output_per_mtok,cache_write_5m_per_mtok,cache_write_1h_per_mtok,cache_read_per_mtok,fast_multiplier,discount_rate,note
+*,,,,,,,0,全モデルの既定の割引率
+claude-fable-5-1,10.0,50.0,,,0.25,,,
+claude-mythos-5-1,10.0,50.0,,,,,,cache_read は導出値（未確認）
+claude-fable-5,10.0,50.0,,,,,,
+claude-opus-5-5,4.0,20.0,,,0.20,2.0,,
+claude-opus-5,5.0,25.0,,,,2.0,,
+claude-opus-4-8,5.0,25.0,,,,2.0,,fast 倍率は未確認
+claude-opus-4-7,5.0,25.0,,,,,,
+claude-opus-4-6,5.0,25.0,,,,,,
+claude-opus-4-5,5.0,25.0,,,,,,
+claude-opus-4-1,15.0,75.0,,,,,,
+claude-opus-4,15.0,75.0,,,,,,
+claude-sonnet-5-5,2.0,10.0,,,,,,
+claude-sonnet-5,2.0,10.0,,,,,,
+claude-sonnet-4-6,3.0,15.0,,,,,,
+claude-sonnet-4-5,3.0,15.0,,,,,,
+claude-sonnet-4,3.0,15.0,,,,,,
+claude-3-7-sonnet,3.0,15.0,,,,,,
+claude-haiku-4-5,1.0,5.0,,,,,,
+claude-3-5-haiku,0.8,4.0,,,,,,
+claude-3-haiku,0.25,1.25,,,,,,

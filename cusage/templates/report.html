@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,.10); --hover: rgba(11,11,11,.05);
+  --accent: #2a78d6; --good-text: #006300;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948; --s-other: #a9a79f;
+  --warn-bg: #fff4d6; --warn-ink: #5c4200;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --hover: rgba(255,255,255,.07);
+    --accent: #3987e5; --good-text: #0ca30c;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; --s-other: #6d6b65;
+    --warn-bg: #3a2f10; --warn-ink: #f3d98b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,.10); --hover: rgba(255,255,255,.07);
+  --accent: #3987e5; --good-text: #0ca30c;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; --s-other: #6d6b65;
+  --warn-bg: #3a2f10; --warn-ink: #f3d98b;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+h1 { font-size: 20px; font-weight: 600; margin: 0 0 2px; }
+.sub { color: var(--ink-2); font-size: 13px; }
+h2 { font-size: 15px; font-weight: 600; margin: 0 0 2px; }
+.hint { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+button, select, input { font: inherit; color: var(--ink); }
+.btn {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 12px; cursor: pointer; min-height: 32px;
+}
+.btn:hover { background: var(--hover); }
+.btn[aria-pressed="true"], .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .hit:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.filters { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 20px 0 16px; }
+.group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.group > label { color: var(--ink-2); font-size: 12px; margin-right: 2px; }
+select, input[type="date"] {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 4px 8px; min-height: 32px; max-width: 260px;
+}
+.warn {
+  background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px;
+  padding: 8px 12px; margin: 0 0 12px; font-size: 13px;
+}
+.hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-end; margin: 8px 0 20px; }
+.hero .big { font-size: 56px; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; }
+.hero .lbl { color: var(--ink-2); font-size: 13px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.tile .k { color: var(--ink-2); font-size: 12px; }
+.tile .v { font-size: 24px; font-weight: 600; line-height: 1.25; }
+.tile .d { color: var(--muted); font-size: 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } .hero .big { font-size: 44px; } }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 6px; font-size: 12px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font: 11px system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif; fill: var(--muted); }
+svg text.val { fill: var(--ink); font-weight: 600; }
+svg text.lab { fill: var(--ink-2); font-size: 12px; }
+.seg { transition: opacity .1s; }
+.seg:hover, .hit:hover ~ .seg { opacity: .85; }
+.hit { fill: transparent; cursor: default; }
+.hit:hover, .hit:focus { fill: var(--hover); }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink-2); font-size: 12px; width: fit-content; border-radius: 4px; }
+.twrap { max-height: 320px; overflow: auto; margin-top: 8px; border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { padding: 5px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child, th.l, td.l { text-align: left; }
+thead th { position: sticky; top: 0; background: var(--surface); color: var(--ink-2); font-weight: 600; }
+td.num, th.num { font-variant-numeric: tabular-nums; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); }
+td.prompt { max-width: 360px; overflow: hidden; text-overflow: ellipsis; text-align: left; color: var(--ink-2); }
+tr:last-child td { border-bottom: 0; }
+.more { margin-top: 10px; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
+#tip {
+  position: fixed; z-index: 10; pointer-events: none; display: none; max-width: 320px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 8px 10px; font-size: 12px;
+}
+#tip .th { color: var(--ink-2); margin-bottom: 4px; }
+#tip .tr { display: flex; align-items: center; gap: 8px; line-height: 1.6; }
+#tip .tr b { color: var(--ink); font-weight: 600; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+#tip .tr span { color: var(--ink-2); }
+#tip .key { width: 10px; height: 3px; border-radius: 2px; flex: none; }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+footer p { margin: 4px 0; }
+.busy { opacity: .6; }
+@media print { .filters, .btn, details { display: none; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>__TITLE__</h1>
+      <div class="sub" id="meta"></div>
+    </div>
+    <button class="btn" id="theme" type="button" aria-label="配色の切り替え">配色: 自動</button>
+  </header>
+
+  <div id="warnings"></div>
+
+  <div class="filters" role="group" aria-label="絞り込み">
+    <div class="group" id="ranges" role="group" aria-label="期間"></div>
+    <div class="group">
+      <label for="from">期間指定</label>
+      <input type="date" id="from"> <span class="sub">〜</span> <input type="date" id="to">
+    </div>
+    <div class="group"><label for="proj">プロジェクト</label><select id="proj"></select></div>
+    <div class="group"><label for="model">モデル</label><select id="model"></select></div>
+    <div class="group" role="group" aria-label="指標">
+      <button class="btn" type="button" data-metric="cost" aria-pressed="true">金額(USD)</button>
+      <button class="btn" type="button" data-metric="tokens" aria-pressed="false">トークン</button>
+    </div>
+  </div>
+
+  <div id="root">
+    <div class="hero">
+      <div><div class="lbl">概算利用金額（割引適用後）</div><div class="big" id="hero"></div><div class="sub" id="hero-sub"></div></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid">
+      <section class="card wide" id="c-day"></section>
+      <section class="card" id="c-month"></section>
+      <section class="card" id="c-model"></section>
+      <section class="card wide" id="c-proj"></section>
+      <section class="card wide" id="c-kind"></section>
+      <section class="card wide" id="c-turn"></section>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script id="data" type="application/json">__DATA_JSON__</script>
+<script>
+(function () {
+'use strict';
+var D = JSON.parse(document.getElementById('data').textContent);
+var SVGNS = 'http://www.w3.org/2000/svg';
+var MAX_SLOTS = 8;
+
+/* ---------- 小さなユーティリティ ---------- */
+function el(tag, attrs, kids) {
+  var e = document.createElement(tag);
+  if (attrs) for (var k in attrs) { if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  (kids || []).forEach(function (c) { e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+  return e;
+}
+function sv(tag, attrs, parent) {
+  var e = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) { if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+var nfInt = new Intl.NumberFormat('ja-JP');
+function money(v, compact) {
+  if (compact && v >= 10000) return '$' + (v / 1000).toFixed(0) + 'K';
+  if (compact && v >= 1000) return '$' + (v / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (v >= 1000) return '$' + Math.round(v).toLocaleString('en-US');
+  return '$' + v.toFixed(v >= 100 ? 1 : 2);
+}
+function tokFmt(v, compact) {
+  if (!compact) return nfInt.format(Math.round(v));
+  if (v >= 1e9) return (v / 1e9).toFixed(v >= 1e10 ? 0 : 1).replace(/\.0$/, '') + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(v >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(v));
+}
+var state = { range: 'all', from: '', to: '', proj: -1, model: -1, metric: 'cost', turnLimit: 50, sort: 'cost', dir: -1 };
+function fmt(v, compact) { return state.metric === 'cost' ? money(v, compact) : tokFmt(v, compact); }
+function tickFmt(v) {
+  if (state.metric !== 'cost') return tokFmt(v, true);
+  if (v >= 1000) return money(v, true);
+  return '$' + (Number.isInteger(v) ? v : v.toFixed(v < 1 ? 2 : 1));
+}
+function metricName() { return state.metric === 'cost' ? '概算金額(USD)' : 'トークン数'; }
+function val(f) { return state.metric === 'cost' ? f[10] : f[3] + f[4] + f[5] + f[6] + f[7]; }
+function addDays(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function nextMonth(m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); mo++; if (mo > 12) { mo = 1; y++; } return y + '-' + (mo < 10 ? '0' : '') + mo; }
+function estWidth(str, size) {
+  var w = 0;
+  for (var i = 0; i < str.length; i++) w += str.charCodeAt(i) > 0x2e80 ? size : size * 0.56;
+  return w;
+}
+function truncate(str, maxPx, size) {
+  /* 中間を省略して先頭と末尾を残す（claude-sonnet-5 と claude-sonnet-5-5 のように末尾で区別するため） */
+  if (estWidth(str, size) <= maxPx) return str;
+  var head = Math.ceil(str.length / 2), tail = str.length - head;
+  while (head + tail > 2 && estWidth(str.slice(0, head) + '…' + str.slice(str.length - tail), size) > maxPx) {
+    if (head >= tail) head--; else tail--;
+  }
+  return str.slice(0, head) + '…' + str.slice(str.length - tail);
+}
+
+/* ---------- 色: モデルは全期間の金額順で固定スロット（絞り込んでも塗り替えない） ---------- */
+function slotVar(i) { return i < MAX_SLOTS ? 'var(--s' + (i + 1) + ')' : 'var(--s-other)'; }
+
+/* ---------- ツールチップ ---------- */
+var tip = document.getElementById('tip');
+function showTip(header, rows, x, y) {
+  clear(tip);
+  tip.appendChild(el('div', { 'class': 'th', text: header }));
+  rows.forEach(function (r) {
+    var row = el('div', { 'class': 'tr' });
+    if (r.color) { var k = el('i', { 'class': 'key' }); k.style.background = r.color; row.appendChild(k); }
+    row.appendChild(el('span', { text: r.name }));
+    row.appendChild(el('b', { text: r.value }));
+    tip.appendChild(row);
+  });
+  tip.style.display = 'block';
+  var w = tip.offsetWidth, h = tip.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  var px = x + 14, py = y + 14;
+  if (px + w > vw - 8) px = Math.max(8, x - w - 14);
+  if (py + h > vh - 8) py = Math.max(8, y - h - 14);
+  tip.style.left = px + 'px'; tip.style.top = py + 'px';
+}
+function hideTip() { tip.style.display = 'none'; }
+function bindTip(node, fn) {
+  node.addEventListener('pointermove', function (e) { var t = fn(); showTip(t.header, t.rows, e.clientX, e.clientY); });
+  node.addEventListener('pointerleave', hideTip);
+  node.addEventListener('focus', function () {
+    var t = fn(), r = node.getBoundingClientRect(); showTip(t.header, t.rows, r.left + r.width / 2, r.top + 8);
+  });
+  node.addEventListener('blur', hideTip);
+}
+
+/* ---------- 絞り込み ---------- */
+function rangeBounds() {
+  var lo = '', hi = '';
+  var t = D.meta.today;
+  if (state.range === '7' || state.range === '30' || state.range === '90') lo = addDays(t, -(+state.range) + 1);
+  else if (state.range === 'month') lo = t.slice(0, 7) + '-01';
+  else if (state.range === 'custom') { lo = state.from; hi = state.to; }
+  return [lo, hi];
+}
+function selectFacts() {
+  var b = rangeBounds(), lo = b[0], hi = b[1];
+  return D.facts.filter(function (f) {
+    var day = D.days[f[1]];
+    if (lo && day < lo) return false;
+    if (hi && day > hi) return false;
+    if (state.model >= 0 && f[2] !== state.model) return false;
+    if (state.proj >= 0 && D.turns[f[0]][1] !== state.proj) return false;
+    return true;
+  });
+}
+
+/* ---------- チャート部品 ---------- */
+function niceScale(max, n) {
+  if (!(max > 0)) return { top: 1, ticks: [0, 1] };
+  var raw = max / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), norm = raw / mag;
+  var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  var top = Math.ceil(max / step - 1e-9) * step, ticks = [];
+  for (var v = 0; v <= top + step / 1000; v += step) ticks.push(v);
+  return { top: top, ticks: ticks };
+}
+function topRounded(x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, h, w / 2));
+  return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y +
+    'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z';
+}
+function legend(items) {
+  var box = el('div', { 'class': 'legend' });
+  items.forEach(function (it) {
+    var i = el('i'); i.style.background = it.color;
+    box.appendChild(el('span', null, [i, it.name]));
+  });
+  return box;
+}
+
+/* 積み上げ縦棒: cats=[{key,label}], series=[{name,color}], data[seriesIdx][catIdx] */
+function stackedColumns(host, cats, series, data, ariaLabel) {
+  var W = Math.max(280, host.clientWidth || 600), H = 250;
+  var m = { l: 52, r: 8, t: 18, b: 26 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
+  var totals = cats.map(function (_c, i) { return series.reduce(function (a, _s, j) { return a + data[j][i]; }, 0); });
+  var maxT = Math.max.apply(null, totals.concat([0]));
+  var sc = niceScale(maxT, 4);
+  var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': ariaLabel });
+  function Y(v) { return m.t + ph - (v / sc.top) * ph; }
+  sc.ticks.forEach(function (t) {
+    sv('line', { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), style: 'stroke:var(' + (t === 0 ? '--axis' : '--grid') + ');stroke-width:1' }, svg);
+    sv('text', { x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end', text: tickFmt(t) }, svg);
+  });
+  var n = cats.length, band = pw / n, barW = Math.max(1, Math.min(24, band * 0.7));
+  var step = Math.max(1, Math.ceil(70 / band));
+  var focusable = n <= 31, peakIdx = totals.indexOf(maxT);
+  cats.forEach(function (c, i) {
+    var x = m.l + band * i, bx = x + (band - barW) / 2;
+    var g = sv('g', {}, svg);
+    var hit = sv('rect', { 'class': 'hit', x: x, y: m.t, width: band, height: ph }, g);
+    if (focusable) hit.setAttribute('tabindex', '0');
+    var vis = [];
+    series.forEach(function (_s, j) { if (data[j][i] > 0) vis.push(j); });
+    var cum = 0;
+    vis.forEach(function (j, k) {
+      var v = data[j][i], yb = Y(cum), yt = Y(cum + v);
+      cum += v;
+      var top = yt + (k < vis.length - 1 ? 1 : 0), bot = yb - (k > 0 ? 1 : 0), h = Math.max(1, bot - top);
+      var seg = k === vis.length - 1
+        ? sv('path', { 'class': 'seg', d: topRounded(bx, top, barW, h, 4) }, g)
+        : sv('rect', { 'class': 'seg', x: bx, y: top, width: barW, height: h }, g);
+      seg.style.fill = series[j].color;
+      seg.style.pointerEvents = 'none';
+    });
+    if (i % step === 0 || i === n - 1 && (n - 1) % step > step / 2) {
+      sv('text', { x: x + band / 2, y: H - 8, 'text-anchor': 'middle', text: c.label }, svg);
+    }
+    bindTip(hit, function () {
+      var rows = vis.slice().sort(function (a, b) { return data[b][i] - data[a][i]; })
+        .map(function (j) { return { color: series[j].color, name: series[j].name, value: fmt(data[j][i]) }; });
+      rows.push({ name: '合計', value: fmt(totals[i]) });
+      return { header: c.full || c.label, rows: rows };
+    });
+  });
+  if (maxT > 0) {   // 最大値だけ直接ラベル
+    var px = Math.min(W - m.r - 20, Math.max(m.l + 20, m.l + band * peakIdx + band / 2));
+    sv('text', { 'class': 'val', x: px, y: Y(maxT) - 6, 'text-anchor': 'middle', text: fmt(maxT, true) }, svg);
+  }
+  host.appendChild(svg);
+}
+
+/* 横棒: rows=[{label,title,value,color,extra}] */
+function hBars(host, rows, ariaLabel, total) {
+  var W = Math.max(280, host.clientWidth || 600), rowH = 30, barH = 16;
+  var labW = Math.min(240, Math.max(120, W * 0.36)), valW = 118, pad = 4;
+  var H = rows.length * rowH + pad * 2;
+  var maxV = Math.max.apply(null, rows.map(function (r) { return r.value; }).concat([0])) || 1;
+  var bw = Math.max(20, W - labW - valW - 8);
+  var svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': ariaLabel });
+  sv('line', { x1: labW, x2: labW, y1: 0, y2: H, style: 'stroke:var(--axis);stroke-width:1' }, svg);
+  rows.forEach(function (r, i) {
+    var y = pad + i * rowH, len = Math.max(r.value > 0 ? 2 : 0, (r.value / maxV) * bw);
+    var g = sv('g', {}, svg);
+    var hit = sv('rect', { 'class': 'hit', x: 0, y: y, width: W, height: rowH, tabindex: 0 }, g);
+    var t = sv('text', { 'class': 'lab', x: labW - 10, y: y + rowH / 2 + 4, 'text-anchor': 'end', text: truncate(r.label, labW - 14, 12) }, g);
+    sv('title', { text: r.title || r.label }, t);
+    if (len > 0) {
+      var bar = sv('path', { 'class': 'seg', d: 'M' + (labW + 1) + ',' + (y + (rowH - barH) / 2) + 'h' + Math.max(0, len - 4) +
+        'q4,0 4,4v' + (barH - 8) + 'q0,4 -4,4h-' + Math.max(0, len - 4) + 'z' }, g);
+      bar.style.fill = r.color; bar.style.pointerEvents = 'none';
+    }
+    var pct = total > 0 ? Math.round(r.value / total * 100) : 0;
+    sv('text', { 'class': 'val', x: labW + len + 8, y: y + rowH / 2 + 4, text: fmt(r.value, true) + (total > 0 ? '  ' + pct + '%' : '') }, g);
+    bindTip(hit, function () {
+      var rs = [{ color: r.color, name: state.metric === 'cost' ? '概算金額' : 'トークン', value: fmt(r.value) }];
+      (r.extra || []).forEach(function (x) { rs.push(x); });
+      return { header: r.title || r.label, rows: rs };
+    });
+  });
+  host.appendChild(svg);
+}
+
+function tableView(headers, rowsData, opts) {
+  opts = opts || {};
+  var det = el('details');
+  det.appendChild(el('summary', { text: '表で見る' }));
+  var wrap = el('div', { 'class': 'twrap' });
+  var t = el('table');
+  var tr = el('tr');
+  headers.forEach(function (h) { tr.appendChild(el('th', { 'class': h.left ? 'l' : 'num', text: h.text })); });
+  t.appendChild(el('thead', null, [tr]));
+  var body = el('tbody');
+  rowsData.forEach(function (r) {
+    var row = el('tr');
+    r.forEach(function (c, i) { row.appendChild(el('td', { 'class': headers[i].left ? 'l' : 'num', text: c })); });
+    body.appendChild(row);
+  });
+  t.appendChild(body); wrap.appendChild(t); det.appendChild(wrap);
+  return det;
+}
+function cardHead(card, title, hint) {
+  clear(card);
+  card.appendChild(el('h2', { text: title }));
+  if (hint) card.appendChild(el('p', { 'class': 'hint', text: hint }));
+}
+
+/* ---------- 描画 ---------- */
+function seriesFor(rows, keyOf, catIndex, ncats) {
+  /* モデルを固定スロットの系列に。9 番目以降は「その他」に畳む */
+  var used = {};
+  rows.forEach(function (f) { used[f[2]] = true; });
+  var ids = D.modelOrder.filter(function (m) { return used[m]; });
+  var named = ids.filter(function (m) { return D.modelSlot[m] < MAX_SLOTS; });
+  var rest = ids.filter(function (m) { return D.modelSlot[m] >= MAX_SLOTS; });
+  var series = named.map(function (m) { return { id: m, name: D.models[m], color: slotVar(D.modelSlot[m]) }; });
+  if (rest.length) series.push({ id: -1, name: 'その他 (' + rest.length + ' モデル)', color: 'var(--s-other)', rest: rest });
+  var data = series.map(function () { var a = new Array(ncats); for (var i = 0; i < ncats; i++) a[i] = 0; return a; });
+  var pos = {};
+  series.forEach(function (s, j) { if (s.id >= 0) pos[s.id] = j; else s.rest.forEach(function (m) { pos[m] = j; }); });
+  rows.forEach(function (f) { var ci = catIndex(f); if (ci >= 0) data[pos[f[2]]][ci] += val(f); });
+  return { series: series, data: data };
+}
+
+function render() {
+  hideTip();
+  var rows = selectFacts();
+  var root = document.getElementById('root');
+  root.classList.remove('busy');
+
+  var tot = { cost: 0, list: 0, tokens: 0, calls: 0, inp: 0, out: 0, cw: 0, cr: 0 }, turnSet = {}, daySet = {};
+  rows.forEach(function (f) {
+    tot.cost += f[10]; tot.list += f[9]; tot.calls += f[8]; tot.inp += f[3]; tot.out += f[4];
+    tot.cw += f[5] + f[6]; tot.cr += f[7]; turnSet[f[0]] = 1; daySet[f[1]] = 1;
+  });
+  tot.tokens = tot.inp + tot.out + tot.cw + tot.cr;
+  var nTurns = Object.keys(turnSet).length, nDays = Object.keys(daySet).length;
+
+  document.getElementById('hero').textContent = '$' + tot.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('hero-sub').textContent = D.meta.discountLabel +
+    (tot.list > tot.cost ? '（定価ベース ' + money(tot.list) + ' / 割引額 ' + money(tot.list - tot.cost) + '）' : '');
+  var kp = document.getElementById('kpis'); clear(kp);
+  [['ターン数', nfInt.format(nTurns), 'チャット1往復 = 1ターン'],
+   ['API呼び出し数', nfInt.format(tot.calls), 'ツール実行・サブエージェント含む'],
+   ['合計トークン', tokFmt(tot.tokens, true), '入力 ' + tokFmt(tot.inp, true) + ' / 出力 ' + tokFmt(tot.out, true)],
+   ['キャッシュ', tokFmt(tot.cw + tot.cr, true), '書込 ' + tokFmt(tot.cw, true) + ' / 読込 ' + tokFmt(tot.cr, true)],
+   ['1ターン平均', nTurns ? money(tot.cost / nTurns) : '-', '割引適用後'],
+   ['稼働日あたり', nDays ? money(tot.cost / nDays) : '-', nDays + ' 日分']
+  ].forEach(function (k) {
+    kp.appendChild(el('div', { 'class': 'tile' }, [el('div', { 'class': 'k', text: k[0] }), el('div', { 'class': 'v', text: k[1] }), el('div', { 'class': 'd', text: k[2] })]));
+  });
+
+  ['c-day', 'c-month', 'c-model', 'c-proj', 'c-kind', 'c-turn'].forEach(function (id) { clear(document.getElementById(id)); });
+  if (!rows.length) {
+    document.getElementById('c-day').appendChild(el('div', { 'class': 'empty', text: '該当するデータがありません。条件を変更してください。' }));
+    return;
+  }
+
+  /* 日次 */
+  var minDay = D.days[rows.reduce(function (a, f) { return Math.min(a, f[1]); }, 1e9)];
+  var maxDay = D.days[rows.reduce(function (a, f) { return Math.max(a, f[1]); }, -1)];
+  var dayKeys = [], multiYear = minDay.slice(0, 4) !== maxDay.slice(0, 4);
+  for (var d = minDay; d <= maxDay; d = addDays(d, 1)) dayKeys.push(d);
+  var dayIdx = {}; dayKeys.forEach(function (k, i) { dayIdx[k] = i; });
+  var dayCats = dayKeys.map(function (k) { return { key: k, label: multiYear ? k.slice(2).replace(/-/g, '/') : k.slice(5).replace('-', '/'), full: k }; });
+  var ds = seriesFor(rows, null, function (f) { return dayIdx[D.days[f[1]]]; }, dayKeys.length);
+  var c = document.getElementById('c-day');
+  cardHead(c, '日次の推移', metricName() + '（モデル別の積み上げ）。棒にカーソルを合わせると内訳を表示します。');
+  c.appendChild(legend(ds.series));
+  var host = el('div'); c.appendChild(host);
+  stackedColumns(host, dayCats, ds.series, ds.data, '日次の' + metricName());
+  c.appendChild(tableView(['日付'].concat(ds.series.map(function (s) { return s.name; })).concat(['合計']).map(function (t, i) { return { text: t, left: i === 0 }; }),
+    dayKeys.map(function (k, i) {
+      var t = 0; var r = ds.series.map(function (_s, j) { t += ds.data[j][i]; return fmt(ds.data[j][i]); });
+      return [k].concat(r).concat([fmt(t)]);
+    })));
+
+  /* 月次 */
+  var minM = minDay.slice(0, 7), maxM = maxDay.slice(0, 7), monKeys = [];
+  for (var mo = minM; mo <= maxM; mo = nextMonth(mo)) monKeys.push(mo);
+  var monIdx = {}; monKeys.forEach(function (k, i) { monIdx[k] = i; });
+  var monCats = monKeys.map(function (k) { return { key: k, label: k, full: k }; });
+  var ms = seriesFor(rows, null, function (f) { return monIdx[D.days[f[1]].slice(0, 7)]; }, monKeys.length);
+  c = document.getElementById('c-month');
+  cardHead(c, '月次の推移', metricName() + '（モデル別の積み上げ）');
+  c.appendChild(legend(ms.series));
+  host = el('div'); c.appendChild(host);
+  stackedColumns(host, monCats, ms.series, ms.data, '月次の' + metricName());
+  c.appendChild(tableView(['月'].concat(ms.series.map(function (s) { return s.name; })).concat(['合計']).map(function (t, i) { return { text: t, left: i === 0 }; }),
+    monKeys.map(function (k, i) {
+      var t = 0; var r = ms.series.map(function (_s, j) { t += ms.data[j][i]; return fmt(ms.data[j][i]); });
+      return [k].concat(r).concat([fmt(t)]);
+    })));
+
+  /* モデル別 */
+  var byModel = {};
+  rows.forEach(function (f) {
+    var o = byModel[f[2]] || (byModel[f[2]] = { v: 0, calls: 0, tok: 0, cost: 0 });
+    o.v += val(f); o.calls += f[8]; o.tok += f[3] + f[4] + f[5] + f[6] + f[7]; o.cost += f[10];
+  });
+  var mrows = Object.keys(byModel).map(function (k) { return { id: +k, o: byModel[k] }; })
+    .sort(function (a, b) { return b.o.v - a.o.v; });
+  c = document.getElementById('c-model');
+  cardHead(c, 'モデル別', metricName());
+  host = el('div'); c.appendChild(host);
+  hBars(host, mrows.map(function (r) {
+    return { label: D.models[r.id], value: r.o.v, color: slotVar(D.modelSlot[r.id]),
+      extra: [{ name: 'API呼び出し', value: nfInt.format(r.o.calls) }, { name: 'トークン', value: tokFmt(r.o.tok) }, { name: '概算金額', value: money(r.o.cost) }] };
+  }), 'モデル別の' + metricName(), mrows.reduce(function (a, r) { return a + r.o.v; }, 0));
+  c.appendChild(tableView([{ text: 'モデル', left: true }, { text: 'API呼び出し' }, { text: 'トークン' }, { text: '概算金額' }],
+    mrows.map(function (r) { return [D.models[r.id], nfInt.format(r.o.calls), tokFmt(r.o.tok), money(r.o.cost)]; })));
+
+  /* プロジェクト別 */
+  var byProj = {};
+  rows.forEach(function (f) {
+    var p = D.turns[f[0]][1];
+    var o = byProj[p] || (byProj[p] = { v: 0, turns: {}, calls: 0, tok: 0, cost: 0 });
+    o.v += val(f); o.turns[f[0]] = 1; o.calls += f[8]; o.tok += f[3] + f[4] + f[5] + f[6] + f[7]; o.cost += f[10];
+  });
+  var prow = Object.keys(byProj).map(function (k) { return { id: +k, o: byProj[k] }; }).sort(function (a, b) { return b.o.v - a.o.v; });
+  var TOP = 15, shown = prow.slice(0, TOP), restP = prow.slice(TOP);
+  var projRows = shown.map(function (r) {
+    return { label: D.projects[r.id].label, title: D.projects[r.id].path, value: r.o.v, color: 'var(--s1)',
+      extra: [{ name: 'ターン数', value: nfInt.format(Object.keys(r.o.turns).length) }, { name: 'API呼び出し', value: nfInt.format(r.o.calls) },
+              { name: 'トークン', value: tokFmt(r.o.tok) }, { name: '概算金額', value: money(r.o.cost) }] };
+  });
+  if (restP.length) projRows.push({ label: 'その他 (' + restP.length + ' 件)', value: restP.reduce(function (a, r) { return a + r.o.v; }, 0), color: 'var(--s-other)' });
+  c = document.getElementById('c-proj');
+  cardHead(c, 'ディレクトリ（プロジェクト）別', metricName() + '。作業ディレクトリ(cwd)単位。上位 ' + TOP + ' 件、残りは「その他」。');
+  host = el('div'); c.appendChild(host);
+  hBars(host, projRows, 'プロジェクト別の' + metricName(), prow.reduce(function (a, r) { return a + r.o.v; }, 0));
+  c.appendChild(tableView([{ text: 'プロジェクト', left: true }, { text: 'ディレクトリ', left: true }, { text: 'ターン数' }, { text: 'API呼び出し' }, { text: 'トークン' }, { text: '概算金額' }],
+    prow.map(function (r) { return [D.projects[r.id].label, D.projects[r.id].path, nfInt.format(Object.keys(r.o.turns).length), nfInt.format(r.o.calls), tokFmt(r.o.tok), money(r.o.cost)]; })));
+
+  /* トークン種別 */
+  var K = [['input', '入力'], ['output', '出力'], ['cache_write_5m', 'キャッシュ書込 (5分)'], ['cache_write_1h', 'キャッシュ書込 (1時間)'], ['cache_read', 'キャッシュ読込']];
+  var kt = [0, 0, 0, 0, 0], kc = [0, 0, 0, 0, 0];
+  rows.forEach(function (f) {
+    var m = D.modelPrice[f[2]];
+    for (var i = 0; i < 5; i++) {
+      kt[i] += f[3 + i];
+      kc[i] += f[3 + i] * m[i] / 1e6 * m[5] * (1 - m[6]);
+    }
+  });
+  c = document.getElementById('c-kind');
+  cardHead(c, 'トークン種別の内訳', metricName() + '。キャッシュ読込はトークン数が最大でも単価が低いため、金額では出力・キャッシュ書込が主体になります。');
+  host = el('div'); c.appendChild(host);
+  var kv = state.metric === 'cost' ? kc : kt;
+  hBars(host, K.map(function (k, i) {
+    return { label: k[1], value: kv[i], color: 'var(--s1)', extra: [{ name: 'トークン', value: tokFmt(kt[i]) }, { name: '概算金額', value: money(kc[i]) }] };
+  }), 'トークン種別の' + metricName(), kv.reduce(function (a, b) { return a + b; }, 0));
+  c.appendChild(tableView([{ text: '種別', left: true }, { text: 'トークン' }, { text: '概算金額' }],
+    K.map(function (k, i) { return [k[1], tokFmt(kt[i]), money(kc[i])]; })));
+  c.appendChild(el('p', { 'class': 'hint', text: '※ 種別ごとの金額は Fast モード倍率・割引を反映した概算値です。' }));
+
+  renderTurns(rows);
+}
+
+/* ---------- ターン一覧 ---------- */
+function renderTurns(rows) {
+  var byTurn = {};
+  rows.forEach(function (f) {
+    var o = byTurn[f[0]] || (byTurn[f[0]] = { id: f[0], calls: 0, inp: 0, out: 0, cw: 0, cr: 0, cost: 0, models: {} });
+    o.calls += f[8]; o.inp += f[3]; o.out += f[4]; o.cw += f[5] + f[6]; o.cr += f[7]; o.cost += f[10];
+    o.models[f[2]] = (o.models[f[2]] || 0) + f[10];
+  });
+  var list = Object.keys(byTurn).map(function (k) { return byTurn[k]; });
+  var key = state.sort, dir = state.dir;
+  list.sort(function (a, b) {
+    var x, y;
+    if (key === 'start') { x = D.turns[a.id][0]; y = D.turns[b.id][0]; }
+    else if (key === 'proj') { x = D.projects[D.turns[a.id][1]].label; y = D.projects[D.turns[b.id][1]].label; }
+    else { x = a[key]; y = b[key]; }
+    return (x < y ? -1 : x > y ? 1 : 0) * dir;
+  });
+  var c = document.getElementById('c-turn');
+  cardHead(c, 'ターン（チャット1往復）ごとの消費量', '見出しをクリックで並べ替え。既定は金額の高い順。全 ' + nfInt.format(list.length) + ' ターン。' +
+    (D.meta.promptChars ? '' : ' プロンプト本文は出力していません（--prompt-chars で有効化）。'));
+  var cols = [['start', '開始', 1], ['proj', 'プロジェクト', 1], [null, 'セッション', 1], ['calls', 'API呼出', 0], ['inp', '入力', 0], ['out', '出力', 0], ['cw', 'キャッシュ書込', 0], ['cr', 'キャッシュ読込', 0], ['cost', '金額(USD)', 0], [null, 'モデル', 1]];
+  if (D.meta.promptChars) cols.push([null, 'プロンプト', 1]);
+  var t = el('table'), tr = el('tr');
+  cols.forEach(function (cl) {
+    var th = el('th', { 'class': (cl[2] ? 'l' : 'num') + (cl[0] ? ' sortable' : ''), text: cl[1] + (cl[0] && cl[0] === key ? (dir < 0 ? ' ▼' : ' ▲') : '') });
+    if (cl[0]) {
+      th.setAttribute('role', 'button'); th.tabIndex = 0;
+      var go = function () { if (state.sort === cl[0]) state.dir = -state.dir; else { state.sort = cl[0]; state.dir = cl[2] ? 1 : -1; } render(); };
+      th.addEventListener('click', go);
+      th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    }
+    tr.appendChild(th);
+  });
+  t.appendChild(el('thead', null, [tr]));
+  var body = el('tbody');
+  list.slice(0, state.turnLimit).forEach(function (o) {
+    var tn = D.turns[o.id], row = el('tr');
+    var mods = Object.keys(o.models).sort(function (a, b) { return o.models[b] - o.models[a]; }).map(function (m) { return D.models[m]; }).join(', ');
+    var cells = [tn[0], D.projects[tn[1]].label, tn[2] + (tn[3] ? ' #' + tn[3] : ''), nfInt.format(o.calls), nfInt.format(o.inp), nfInt.format(o.out), nfInt.format(o.cw), nfInt.format(o.cr), money(o.cost), mods];
+    if (D.meta.promptChars) cells.push(tn[4]);
+    cells.forEach(function (v, i) {
+      var td = el('td', { 'class': (cols[i][2] ? 'l' : 'num') + (i === 10 ? ' prompt' : ''), text: v });
+      if (i === 1) td.title = D.projects[tn[1]].path;
+      if (i === 10) td.title = v;
+      row.appendChild(td);
+    });
+    body.appendChild(row);
+  });
+  t.appendChild(body);
+  var wrap = el('div', { 'class': 'twrap', style: 'max-height:none' }); wrap.appendChild(t); c.appendChild(wrap);
+  if (list.length > state.turnLimit) {
+    var more = el('div', { 'class': 'more' });
+    var b1 = el('button', { 'class': 'btn', type: 'button', text: 'さらに 50 件表示' });
+    b1.onclick = function () { state.turnLimit += 50; render(); };
+    var b2 = el('button', { 'class': 'btn', type: 'button', text: 'すべて表示' });
+    b2.onclick = function () { state.turnLimit = list.length; render(); };
+    more.appendChild(b1); more.appendChild(b2);
+    more.appendChild(el('span', { text: state.turnLimit + ' / ' + nfInt.format(list.length) + ' 件を表示中' }));
+    c.appendChild(more);
+  }
+}
+
+/* ---------- 初期化 ---------- */
+function init() {
+  document.getElementById('meta').textContent =
+    (D.meta.first ? D.meta.first + ' 〜 ' + D.meta.last : 'データなし') + ' ／ 集計タイムゾーン: ' + D.meta.tz +
+    ' ／ 生成: ' + D.meta.generated;
+  var w = document.getElementById('warnings');
+  D.meta.warnings.forEach(function (t) { w.appendChild(el('div', { 'class': 'warn', role: 'alert', text: t })); });
+  var foot = document.getElementById('foot');
+  D.meta.notes.forEach(function (t) { foot.appendChild(el('p', { text: t })); });
+
+  var rg = document.getElementById('ranges');
+  [['all', '全期間'], ['month', '今月'], ['7', '直近7日'], ['30', '直近30日'], ['90', '直近90日']].forEach(function (r) {
+    var b = el('button', { 'class': 'btn', type: 'button', 'data-range': r[0], text: r[1], 'aria-pressed': r[0] === state.range ? 'true' : 'false' });
+    b.onclick = function () { state.range = r[0]; state.from = state.to = ''; document.getElementById('from').value = ''; document.getElementById('to').value = ''; sync(); };
+    rg.appendChild(b);
+  });
+  ['from', 'to'].forEach(function (id) {
+    var inp = document.getElementById(id);
+    inp.min = D.meta.first ? D.meta.first.slice(0, 10) : ''; inp.max = D.meta.today;
+    inp.onchange = function () {
+      state.from = document.getElementById('from').value; state.to = document.getElementById('to').value;
+      state.range = (state.from || state.to) ? 'custom' : 'all'; sync();
+    };
+  });
+  var ps = document.getElementById('proj');
+  ps.appendChild(el('option', { value: '-1', text: 'すべて' }));
+  D.projects.forEach(function (p, i) { ps.appendChild(el('option', { value: String(i), text: p.label, title: p.path })); });
+  ps.onchange = function () { state.proj = +ps.value; state.turnLimit = 50; render(); };
+  var ms = document.getElementById('model');
+  ms.appendChild(el('option', { value: '-1', text: 'すべて' }));
+  D.modelOrder.forEach(function (i) { ms.appendChild(el('option', { value: String(i), text: D.models[i] })); });
+  ms.onchange = function () { state.model = +ms.value; state.turnLimit = 50; render(); };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-metric]'), function (b) {
+    b.onclick = function () { state.metric = b.getAttribute('data-metric'); sync(); };
+  });
+
+  var themeBtn = document.getElementById('theme'), order = ['auto', 'light', 'dark'], labels = { auto: '自動', light: 'ライト', dark: 'ダーク' };
+  var cur = 'auto';
+  try { cur = localStorage.getItem('usage-theme') || 'auto'; } catch (e) {}
+  function applyTheme() {
+    if (cur === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', cur);
+    themeBtn.textContent = '配色: ' + labels[cur];
+  }
+  themeBtn.onclick = function () {
+    cur = order[(order.indexOf(cur) + 1) % 3];
+    try { localStorage.setItem('usage-theme', cur); } catch (e) {}
+    applyTheme();
+  };
+  applyTheme();
+
+  var last = 0, timer = null;
+  if (window.ResizeObserver) {
+    new ResizeObserver(function (es) {
+      var w = Math.round(es[0].contentRect.width);
+      if (w === last) return; last = w;
+      clearTimeout(timer); timer = setTimeout(render, 120);
+    }).observe(document.querySelector('.wrap'));
+  }
+  sync();
+}
+function sync() {
+  state.turnLimit = 50;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-range]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-range') === state.range ? 'true' : 'false'); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-metric]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-metric') === state.metric ? 'true' : 'false'); });
+  render();
+}
+init();
+})();
+</script>
+</body>
+</html>
