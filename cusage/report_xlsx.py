@@ -16,7 +16,7 @@ from . import __version__
 from .aggregate import Bucket, Report
 
 TOKEN_HEADERS = ["入力", "出力", "キャッシュ書込(5分)", "キャッシュ書込(1時間)", "キャッシュ読込", "合計トークン"]
-COST_HEADERS = ["定価ベース(USD)", "割引額(USD)", "概算金額(USD)"]
+COST_HEADERS = ["公開価格(USD)", "割引額(USD)", "概算金額(USD)"]
 DURATION_HEADER = "所要時間(h:mm:ss)"
 INK, PAPER = "#0b0b0b", "#ffffff"
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
@@ -89,16 +89,20 @@ def write_xlsx(rep: Report, path: str) -> str:
     d = rep.pricing.default_discount
     info = [
         ("集計期間", period), ("集計タイムゾーン", rep.tz_label), ("生成日時", f"{rep.generated_at:%Y-%m-%d %H:%M}"),
-        ("価格基準", f"契約割引 {d * 100:g}% を適用" if d else "公開価格（割引なし）"),
+        ("価格基準", f"公開価格から契約割引 {d * 100:g}% を差し引いた金額" if d else "公開価格（契約割引なし）"),
         ("単価表", os.path.basename(rep.pricing.source) or "-"),
     ]
     r = 2
     for k, v in info:
         ws.write(r, 0, k, F["bold"]); ws.write(r, 1, v); r += 1
     r += 1
-    ws.write(r, 0, "概算利用金額(USD)", F["bold"]); ws.write_number(r, 1, rep.total.cost, F["big"]); ws.set_row(r, 32); r += 1
+    ws.write(r, 0, "概算利用金額(USD)", F["bold"]); ws.write_number(r, 1, rep.total.cost, F["big"]); ws.set_row(r, 32)
+    t = rep.total
+    ws.write(r, 2, f"公開価格 ${t.cost_list:,.2f} − 契約割引 ${t.discount:,.2f}" if t.discount > 0
+             else f"公開価格 ${t.cost_list:,.2f}（契約割引なし）", F["note"])
+    r += 1
     dur_total, dur_n = rep.duration_stats()
-    kpis = [("定価ベース(USD)", rep.total.cost_list, "usd"), ("割引額(USD)", rep.total.discount, "usd"),
+    kpis = [("公開価格(USD)", rep.total.cost_list, "usd"), ("割引額(USD)", rep.total.discount, "usd"),
             ("ターン数", rep.total.turns, "int"), ("API呼出数", rep.total.calls, "int"),
             ("合計トークン", rep.total.tokens, "int"), ("入力トークン", rep.total.input, "int"),
             ("出力トークン", rep.total.output, "int"),
@@ -268,7 +272,7 @@ def write_xlsx(rep: Report, path: str) -> str:
     ws = wb.add_worksheet("単価表")
     heads = ["モデル(前方一致キー)", "入力", "出力", "キャッシュ書込(5分)", "キャッシュ書込(1時間)", "キャッシュ読込",
              "Fast倍率", "割引率", "備考"]
-    ws.write(0, 0, f"単価(USD/100万トークン・定価) ／ 出所: {rep.pricing.source or '-'}", F["bold"])
+    ws.write(0, 0, f"単価(USD/100万トークン・公開価格) ／ 出所: {rep.pricing.source or '-'}", F["bold"])
     for i, h in enumerate(heads):
         ws.write(2, i, h, F["h"])
     for i, p in enumerate(rep.pricing.models.values()):

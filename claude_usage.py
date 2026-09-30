@@ -203,8 +203,10 @@ def print_summary(rep: Report, written: list[str]) -> None:
     dur_total, dur_n = rep.duration_stats()
     if dur_n:
         print(f"所要時間: 合計 {_dur(dur_total)} / 1ターン平均 {_dur(dur_total / dur_n)}（{dur_n:,} ターン）")
-    disc = f"（定価 ${t.cost_list:,.2f} / 割引 ${t.discount:,.2f}）" if t.discount > 0 else ""
-    print(f"概算金額: ${t.cost:,.2f} {disc}\n")
+    if t.discount > 0:
+        print(f"概算金額: ${t.cost:,.2f}（公開価格 ${t.cost_list:,.2f} − 契約割引 ${t.discount:,.2f}）\n")
+    else:
+        print(f"概算金額: ${t.cost:,.2f}（公開価格ベース・契約割引なし）\n")
     head = ["", "ターン", "呼出", "トークン", "金額(USD)"]
 
     def rows(items, label=lambda k: k, limit=None):

@@ -1,4 +1,4 @@
-# 単価表（USD / 100万トークン・定価）。2026-09-25 時点の Anthropic API 公開価格。Excel で編集して保存してよい（UTF-8）。
+# 単価表（USD / 100万トークン・公開価格）。2026-09-25 時点の Anthropic API 公開価格。Excel で編集して保存してよい（UTF-8）。
 # '#' で始まる行はコメント。model は前方一致（最長一致）で、日付付き ID や Bedrock/Vertex 形式にも当たる。
 # cache_write_5m / cache_write_1h / cache_read が空欄なら input から導出する（1.25倍 / 2倍 / 0.1倍）。
 # fast_multiplier: usage.speed が fast のときの倍率（空欄 = 1.0）。

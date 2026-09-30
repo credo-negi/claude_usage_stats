@@ -205,7 +205,7 @@ footer p { margin: 4px 0; }
 
   <div id="root">
     <div class="hero">
-      <div><div class="lbl">概算利用金額（割引適用後）</div><div class="big" id="hero"></div><div class="sub" id="hero-sub"></div></div>
+      <div><div class="lbl">概算利用金額（USD）</div><div class="big" id="hero"></div><div class="sub" id="hero-sub"></div></div>
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="grid">
@@ -512,15 +512,19 @@ function renderAll() {
   var durSum = 0, durN = 0;
   Object.keys(turnSet).forEach(function (k) { var d = D.turns[k][5]; if (d != null) { durSum += d; durN++; } });
 
-  document.getElementById('hero').textContent = '$' + tot.cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  document.getElementById('hero-sub').textContent = D.meta.discountLabel +
-    (tot.list > tot.cost ? '（定価ベース ' + money(tot.list) + ' / 割引額 ' + money(tot.list - tot.cost) + '）' : '');
+  function usd2(v) { return '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  document.getElementById('hero').textContent = usd2(tot.cost);
+  var hasDisc = tot.list > tot.cost;
+  var discPct = hasDisc ? +((1 - tot.cost / tot.list) * 100).toFixed(1) : 0;
+  document.getElementById('hero-sub').textContent = hasDisc
+    ? '公開価格 ' + usd2(tot.list) + ' − 契約割引 ' + discPct + '%（−' + usd2(tot.list - tot.cost) + '）= ' + usd2(tot.cost)
+    : '公開価格 ' + usd2(tot.list) + '（契約割引なし）';
   var kp = document.getElementById('kpis'); clear(kp);
   [['ターン数', nfInt.format(nTurns), 'チャット1往復 = 1ターン'],
    ['API呼び出し数', nfInt.format(tot.calls), 'ツール実行・サブエージェント含む'],
    ['合計トークン', tokFmt(tot.tokens, true), '入力 ' + tokFmt(tot.inp, true) + ' / 出力 ' + tokFmt(tot.out, true)],
    ['キャッシュ', tokFmt(tot.cw + tot.cr, true), '書込 ' + tokFmt(tot.cw, true) + ' / 読込 ' + tokFmt(tot.cr, true)],
-   ['1ターン平均', nTurns ? money(tot.cost / nTurns) : '-', '割引適用後'],
+   ['1ターン平均', nTurns ? money(tot.cost / nTurns) : '-', hasDisc ? '契約割引適用後' : '公開価格ベース'],
    ['1ターン平均所要時間', durN ? durFmt(durSum / durN) : '-', durN ? '合計 ' + durFmt(durSum) + '（' + nfInt.format(durN) + ' ターン）' : '所要時間を算出できるターンなし'],
    ['稼働日あたり', nDays ? money(tot.cost / nDays) : '-', nDays + ' 日分']
   ].forEach(function (k) {

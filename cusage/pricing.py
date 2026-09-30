@@ -157,7 +157,7 @@ class Pricing:
         return found
 
     def cost(self, call) -> tuple[float, float]:
-        """(定価ベース, 割引後) を返す。単価が無いモデルは (0, 0)。"""
+        """(公開価格ベース, 割引後) を返す。単価が無いモデルは (0, 0)。"""
         p = self.resolve(call.model)
         if p is None:
             return 0.0, 0.0

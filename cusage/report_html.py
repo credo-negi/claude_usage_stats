@@ -60,7 +60,6 @@ def build_payload(rep: Report) -> dict:
             "first": rep.first.strftime("%Y-%m-%d") if rep.first else "",
             "last": rep.last.strftime("%Y-%m-%d") if rep.last else "",
             "promptChars": rep.prompt_chars,
-            "discountLabel": f"契約割引 {d * 100:g}% を適用" if d else "公開価格ベース（割引なし）",
             "warnings": warnings,
             "notes": [
                 "金額はログのトークン数 × 単価表(pricing.csv)による概算です。実際の請求額・Claude Enterprise の契約条件とは異なる場合があります。",
