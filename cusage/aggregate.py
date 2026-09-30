@@ -2,6 +2,7 @@
 
 ターンの定義: 人間のプロンプト送信から、次のプロンプトが送信されるまでの間に発生した
 全 API 呼び出し（ツール実行ごとの再呼び出し・サブエージェントを含む）。
+所要時間 = プロンプト送信から、そのターンの最後の応答（メインスレッドの最後の API 呼び出しの記録時刻）まで。
 呼び出しは「同一セッション内で、自分より前(同時刻含む)の最も新しいプロンプト」に割り当てる。
 ファイルの並び順に依存しないため、サブエージェントが別ファイルに書かれていても正しく合算される。
 """
@@ -74,6 +75,7 @@ class Turn:
     start: datetime               # 表示タイムゾーンでの開始時刻
     project: str
     prompt: str
+    duration: Optional[float] = None   # 所要時間(秒)。プロンプト不明のターンは None
     bucket: Bucket = field(default_factory=Bucket)
 
 
@@ -125,6 +127,11 @@ class Report:
     prompt_chars: int
     project_labels: dict[str, str]
     sources: list[str] = field(default_factory=list)
+
+    def duration_stats(self) -> tuple[float, int]:
+        """(所要時間の合計秒, 所要時間を算出できたターン数)"""
+        ds = [t.duration for t in self.turns if t.duration is not None]
+        return sum(ds), len(ds)
 
 
 # --------------------------------------------------------------------------
@@ -214,8 +221,11 @@ def assign_turns(calls: list[Call], prompts: list[Prompt], to_local: Callable[[d
             start, _u, _cwd, preview = by_session[session][pi]
         else:
             start, preview = first_call, ""
+        # 終了 = メインスレッドの最後の応答。バックグラウンドのサブエージェントが後から動いても延ばさない
+        end = max(parse_ts(c.ts) for c in (cs if all(c.side for c in cs) else [c for c in cs if not c.side]))
+        duration = max((end - start).total_seconds(), 0.0) if pi >= 0 else None
         turns.append(Turn(idx=-1, session=session, no=pi + 1, start=to_local(min(start, first_call)),
-                          project=project_of[session], prompt=preview))
+                          project=project_of[session], prompt=preview, duration=duration))
         turns[-1].__dict__["_calls"] = cs
     turns.sort(key=lambda t: (t.start, t.session, t.no))
     key_to_turn: dict[str, int] = {}

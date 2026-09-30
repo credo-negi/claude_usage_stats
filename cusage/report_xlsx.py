@@ -17,6 +17,7 @@ from .aggregate import Bucket, Report
 
 TOKEN_HEADERS = ["入力", "出力", "キャッシュ書込(5分)", "キャッシュ書込(1時間)", "キャッシュ読込", "合計トークン"]
 COST_HEADERS = ["定価ベース(USD)", "割引額(USD)", "概算金額(USD)"]
+DURATION_HEADER = "所要時間(h:mm:ss)"
 INK, PAPER = "#0b0b0b", "#ffffff"
 SERIES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
 
@@ -43,6 +44,7 @@ def write_xlsx(rep: Report, path: str) -> str:
         "warn": wb.add_format({"bg_color": "#fff4d6", "font_color": "#5c4200", "text_wrap": True}),
         "big": wb.add_format({"bold": True, "font_size": 22, "num_format": "$#,##0.00"}),
         "text": wb.add_format({}),
+        "dur": wb.add_format({"num_format": "[h]:mm:ss"}),
     }
     n_tok = len(TOKEN_HEADERS)
 
@@ -95,12 +97,14 @@ def write_xlsx(rep: Report, path: str) -> str:
         ws.write(r, 0, k, F["bold"]); ws.write(r, 1, v); r += 1
     r += 1
     ws.write(r, 0, "概算利用金額(USD)", F["bold"]); ws.write_number(r, 1, rep.total.cost, F["big"]); ws.set_row(r, 32); r += 1
+    dur_total, dur_n = rep.duration_stats()
     kpis = [("定価ベース(USD)", rep.total.cost_list, "usd"), ("割引額(USD)", rep.total.discount, "usd"),
             ("ターン数", rep.total.turns, "int"), ("API呼出数", rep.total.calls, "int"),
             ("合計トークン", rep.total.tokens, "int"), ("入力トークン", rep.total.input, "int"),
             ("出力トークン", rep.total.output, "int"),
             ("キャッシュ書込トークン", rep.total.cache_write, "int"), ("キャッシュ読込トークン", rep.total.cache_read, "int"),
             ("1ターン平均(USD)", rep.total.cost / rep.total.turns if rep.total.turns else 0, "usd"),
+            ("合計所要時間", dur_total / 86400, "dur"), ("1ターン平均所要時間", dur_total / dur_n / 86400 if dur_n else 0, "dur"),
             ("稼働日あたり(USD)", rep.total.cost / len(rep.daily) if rep.daily else 0, "usd")]
     for k, v, f in kpis:
         ws.write(r, 0, k); ws.write_number(r, 1, v, F[f]); r += 1
@@ -121,9 +125,10 @@ def write_xlsx(rep: Report, path: str) -> str:
         ws.write(r, 0, kind_names[kind]); ws.write_number(r, 1, tok, F["int"])
         ws.write_number(r, 2, cost, F["usd"]); ws.write_number(r, 3, cost / total_kind_cost, F["pct"]); r += 1
     r += 1
-    ws.merge_range(r, 0, r + 3, 5,
+    ws.merge_range(r, 0, r + 4, 5,
                    "金額はログのトークン数 × 単価表(pricing.csv)による概算で、実際の請求額とは異なる場合があります。\n"
                    "ターン = 人間のプロンプト1回から次のプロンプトまで（ツール実行の再呼び出し・サブエージェントを含む）。\n"
+                   "所要時間 = プロンプト送信から最後の応答まで（ツール許可の待ち時間を含む）。\n"
                    "プロジェクト = セッションの作業ディレクトリ(cwd)。Fast モードは別モデル「(fast)」として集計。",
                    F["note"])
 
@@ -223,7 +228,7 @@ def write_xlsx(rep: Report, path: str) -> str:
     # ---- ターン明細 --------------------------------------------------------
     ws = wb.add_worksheet("ターン明細")
     heads = ["開始日時", "日付", "プロジェクト", "ディレクトリ", "セッションID", "ターン番号", "API呼出数", "うちサブエージェント",
-             "モデル"] + TOKEN_HEADERS + COST_HEADERS
+             "モデル"] + TOKEN_HEADERS + COST_HEADERS + [DURATION_HEADER]
     if rep.prompt_chars:
         heads.append("プロンプト(先頭)")
     data = []
@@ -232,7 +237,7 @@ def write_xlsx(rep: Report, path: str) -> str:
         row_ = [t.start.replace(tzinfo=None), t.start.strftime("%Y-%m-%d"), rep.project_labels[t.project], t.project,
                 t.session, t.no, b.calls, b.sub_calls, ", ".join(b.top_models(5)),
                 b.input, b.output, b.cache_write_5m, b.cache_write_1h, b.cache_read, b.tokens,
-                b.cost_list, b.discount, b.cost]
+                b.cost_list, b.discount, b.cost, None if t.duration is None else t.duration / 86400]
         if rep.prompt_chars:
             row_.append(t.prompt)
         data.append(row_)
@@ -246,6 +251,8 @@ def write_xlsx(rep: Report, path: str) -> str:
             c["format"] = F["int"]
         elif 15 <= i <= 17:
             c["format"] = F["usd4"]
+        elif i == 18:
+            c["format"] = F["dur"]
         cols.append(c)
     last_row = len(data) + 1
     ws.add_table(0, 0, last_row, len(heads) - 1, {"data": data, "columns": cols, "style": "Table Style Light 1",
@@ -253,9 +260,9 @@ def write_xlsx(rep: Report, path: str) -> str:
     ws.freeze_panes(1, 1)
     ws.set_row(0, 32)
     ws.set_column(0, 0, 17); ws.set_column(1, 1, 11); ws.set_column(2, 2, 22); ws.set_column(3, 3, 36)
-    ws.set_column(4, 4, 38); ws.set_column(5, 7, 11); ws.set_column(8, 8, 28); ws.set_column(9, 17, 15)
+    ws.set_column(4, 4, 38); ws.set_column(5, 7, 11); ws.set_column(8, 8, 28); ws.set_column(9, 18, 15)
     if rep.prompt_chars:
-        ws.set_column(18, 18, 60)
+        ws.set_column(19, 19, 60)
 
     # ---- 単価表 ------------------------------------------------------------
     ws = wb.add_worksheet("単価表")

@@ -30,7 +30,8 @@ def build_payload(rep: Report) -> dict:
 
     turns = []
     for t in rep.turns:
-        turns.append([t.start.strftime("%Y-%m-%d %H:%M"), proj_id[t.project], t.session[:8], t.no, t.prompt])
+        turns.append([t.start.strftime("%Y-%m-%d %H:%M"), proj_id[t.project], t.session[:8], t.no, t.prompt,
+                      None if t.duration is None else round(t.duration, 1)])
     # facts の turn は Report.turns の idx（欠番あり）なので、HTML 側の連番に振り直す
     remap = {t.idx: i for i, t in enumerate(rep.turns)}
     facts = [[remap[f.turn], day_id[f.day], model_id[f.model], f.input, f.output, f.cache_write_5m,
@@ -63,7 +64,7 @@ def build_payload(rep: Report) -> dict:
             "warnings": warnings,
             "notes": [
                 "金額はログのトークン数 × 単価表(pricing.csv)による概算です。実際の請求額・Claude Enterprise の契約条件とは異なる場合があります。",
-                "ターン = 人間のプロンプト1回から次のプロンプトまで（ツール実行の再呼び出しとサブエージェントを含む）。プロジェクト = セッションの作業ディレクトリ(cwd)。",
+                "ターン = 人間のプロンプト1回から次のプロンプトまで（ツール実行の再呼び出しとサブエージェントを含む）。所要時間 = プロンプト送信から最後の応答まで（ツール許可の待ち時間を含む）。プロジェクト = セッションの作業ディレクトリ(cwd)。",
                 f"claude-usage-stats v{__version__} ／ 単価表: {os.path.basename(rep.pricing.source) or '-'}",
             ],
         },

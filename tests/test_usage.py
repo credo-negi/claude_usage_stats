@@ -222,6 +222,17 @@ class AggregateTest(unittest.TestCase):
         self.assertEqual(t2.project, CWD)                                              # サブエージェントの cwd 欠落でも親セッションのもの
         self.assertEqual(rep.total.turns, 2)
 
+    def test_turn_duration(self):
+        rep = self.report()
+        t1, t2 = rep.turns
+        self.assertAlmostEqual(t1.duration, 7.0)       # 00:00:00 の送信 → 最後の応答 m2(00:00:07)
+        self.assertAlmostEqual(t2.duration, 7.0)       # 後から動いたサブエージェント(15:31:00)では延びない
+        self.assertEqual(rep.duration_stats(), (14.0, 2))
+        orphan = aggregate.build_report(self.calls, [], self.pricing, "UTC")
+        self.assertIsNone(orphan.turns[0].duration)    # プロンプト不明のターンは算出しない
+        self.assertEqual(orphan.duration_stats(), (0, 0))
+        self.assertEqual([t[5] for t in report_html.build_payload(rep)["turns"]], [7.0, 7.0])
+
     def test_token_and_cost_totals(self):
         rep = self.report()
         m = {k: v for k, v in rep.models.items()}

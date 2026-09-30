@@ -185,6 +185,13 @@ def _tok(n: int) -> str:
     return str(n)
 
 
+def _dur(sec: float) -> str:
+    s = int(round(sec))
+    h, rem = divmod(s, 3600)
+    m, s = divmod(rem, 60)
+    return f"{h}時間{m:02d}分" if h else f"{m}分{s:02d}秒" if m else f"{s}秒"
+
+
 def print_summary(rep: Report, written: list[str]) -> None:
     t = rep.total
     if not rep.first:
@@ -193,6 +200,9 @@ def print_summary(rep: Report, written: list[str]) -> None:
     print(f"期間: {rep.first:%Y-%m-%d} 〜 {rep.last:%Y-%m-%d} ({rep.tz_label})")
     print(f"ターン {t.turns:,} / API呼出 {t.calls:,} / トークン {_tok(t.tokens)} "
           f"(入力 {_tok(t.input)} 出力 {_tok(t.output)} キャッシュ書込 {_tok(t.cache_write)} 読込 {_tok(t.cache_read)})")
+    dur_total, dur_n = rep.duration_stats()
+    if dur_n:
+        print(f"所要時間: 合計 {_dur(dur_total)} / 1ターン平均 {_dur(dur_total / dur_n)}（{dur_n:,} ターン）")
     disc = f"（定価 ${t.cost_list:,.2f} / 割引 ${t.discount:,.2f}）" if t.discount > 0 else ""
     print(f"概算金額: ${t.cost:,.2f} {disc}\n")
     head = ["", "ターン", "呼出", "トークン", "金額(USD)"]
