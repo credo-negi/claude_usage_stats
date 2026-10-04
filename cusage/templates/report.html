@@ -79,6 +79,8 @@ h2 { font-size: 16px; line-height: 24px; font-weight: 500; letter-spacing: .15px
 button, select, input { font: inherit; color: var(--on-surface); letter-spacing: inherit; }
 
 /* ボタン: 通常は outlined、テーマ切替は tonal */
+.ic { display: inline-block; width: 18px; height: 18px; flex: none; fill: currentColor; vertical-align: middle; }
+.btn, .chip, .segmented > button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn {
   background: transparent; border: 1px solid var(--outline); border-radius: 20px;
   padding: 0 16px; cursor: pointer; min-height: 40px; color: var(--primary); font-weight: 500; letter-spacing: .1px;
@@ -95,7 +97,8 @@ button, select, input { font: inherit; color: var(--on-surface); letter-spacing:
 }
 .chip:hover { background: var(--state-hover); }
 .chip[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); border-color: transparent; }
-.chip[aria-pressed="true"]::before { content: "\2713\00a0"; }
+.chk { margin-left: -4px; }
+[aria-pressed="false"] > .chk { display: none; }   /* 選択時だけチェックを出す */
 /* セグメントボタン */
 .segmented { display: inline-flex; }
 .segmented > button {
@@ -106,7 +109,6 @@ button, select, input { font: inherit; color: var(--on-surface); letter-spacing:
 .segmented > button:last-child { border-radius: 0 20px 20px 0; }
 .segmented > button:hover { background: var(--state-hover); }
 .segmented > button[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
-.segmented > button[aria-pressed="true"]::before { content: "\2713\00a0"; }
 .btn:focus-visible, .chip:focus-visible, .segmented > button:focus-visible, select:focus-visible, input:focus-visible,
 summary:focus-visible, .hit:focus-visible, th.sortable:focus-visible {
   outline: 2px solid var(--primary); outline-offset: 2px;
@@ -125,8 +127,9 @@ select:focus, input[type="date"]:focus { border-color: var(--primary); }
 select option { background: var(--surface-high); color: var(--on-surface); }
 .warn {
   background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 12px;
-  padding: 12px 16px; margin: 0 0 12px; font-size: 14px;
+  padding: 12px 16px; margin: 0 0 12px; font-size: 14px; display: flex; gap: 12px; align-items: flex-start;
 }
+.warn .ic { width: 20px; height: 20px; margin-top: 2px; }
 .hero { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-end; margin: 8px 0 20px; }
 .hero .big { font-size: 52px; font-weight: 400; line-height: 60px; letter-spacing: 0; color: var(--primary); }
 .hero .lbl { color: var(--on-surface-variant); font-size: 14px; font-weight: 500; letter-spacing: .1px; }
@@ -150,7 +153,12 @@ svg text.lab { fill: var(--on-surface-variant); font-size: 12px; }
 .hit { fill: transparent; cursor: default; }
 .hit:hover, .hit:focus { fill: var(--state-hover); }
 details { margin-top: 12px; }
-summary { cursor: pointer; color: var(--primary); font-size: 14px; font-weight: 500; letter-spacing: .1px; width: fit-content; border-radius: 4px; padding: 2px 4px; }
+summary { display: flex; align-items: center; gap: 2px; list-style: none; cursor: pointer; color: var(--primary); font-size: 14px; font-weight: 500; letter-spacing: .1px; width: fit-content; border-radius: 4px; padding: 2px 4px; }
+summary::-webkit-details-marker { display: none; }
+summary .ic { transition: transform .15s; }
+details[open] > summary .ic { transform: rotate(180deg); }
+th .ic { width: 16px; height: 16px; vertical-align: -3px; margin: 0 2px; }
+th .ic.off { visibility: hidden; }   /* 並べ替え列が変わっても列幅が動かないよう、場所だけ確保する */
 .twrap { max-height: 320px; overflow: auto; margin-top: 8px; border: 1px solid var(--outline-variant); border-radius: 12px; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--outline-variant); }
@@ -181,13 +189,24 @@ footer p { margin: 4px 0; }
 </style>
 </head>
 <body>
+<!-- アイコン: Material Symbols (Outlined, weight 400, Apache License 2.0)。外部フォント・CDN なしで開けるよう SVG パスを埋め込んでいる -->
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-check" viewBox="0 -960 960 960"><path d="M378-246 154-470l43-43 181 181 384-384 43 43-427 427Z"/></symbol>
+  <symbol id="i-brightness_auto" viewBox="0 -960 960 960"><path d="M310-305h55l37-109h159l38 109h53L505-697h-48L310-305Zm107-157 61-163h5l62 163H417Zm64 433L346-160H160v-186L26-480l134-134v-186h186l135-134 133 134h186v186l134 134-134 134v186H614L481-29Zm0-84 108-107h151v-151l109-109-109-109v-151H589L481-849 371-740H220v151L111-480l109 109v151h150l111 107Zm0-368Z"/></symbol>
+  <symbol id="i-light_mode" viewBox="0 -960 960 960"><path d="M579-381q41-41 41-99t-41-99q-41-41-99-41t-99 41q-41 41-41 99t41 99q41 41 99 41t99-41Zm-240.5 42.5Q280-397 280-480t58.5-141.5Q397-680 480-680t141.5 58.5Q680-563 680-480t-58.5 141.5Q563-280 480-280t-141.5-58.5ZM200-450H40v-60h160v60Zm720 0H760v-60h160v60ZM450-760v-160h60v160h-60Zm0 720v-160h60v160h-60ZM262-658l-100-97 43-44 96 100-39 41Zm494 496-98-100 41-41 99 98-42 43Zm-99-537 98-99 44 42-99 98-43-41ZM162-205l99-98 42 42-98 99-43-43Zm318-275Z"/></symbol>
+  <symbol id="i-dark_mode" viewBox="0 -960 960 960"><path d="M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q8 0 17 .5t23 1.5q-36 32-56 79t-20 99q0 90 63 153t153 63q52 0 99-18.5t79-51.5q1 12 1.5 19.5t.5 14.5q0 150-105 255T480-120Zm0-60q109 0 190-67.5T771-406q-25 11-53.67 16.5Q688.67-384 660-384q-114.69 0-195.34-80.66Q384-545.31 384-660q0-24 5-51.5t18-62.5q-98 27-162.5 109.5T180-480q0 125 87.5 212.5T480-180Zm-4-297Z"/></symbol>
+  <symbol id="i-arrow_upward" viewBox="0 -960 960 960"><path d="M450-160v-526L202-438l-42-42 320-320 320 320-42 42-248-248v526h-60Z"/></symbol>
+  <symbol id="i-arrow_downward" viewBox="0 -960 960 960"><path d="M450-800v526L202-522l-42 42 320 320 320-320-42-42-248 248v-526h-60Z"/></symbol>
+  <symbol id="i-warning" viewBox="0 -960 960 960"><path d="m40-120 440-760 440 760H40Zm104-60h672L480-760 144-180Zm361.5-65.68q8.5-8.67 8.5-21.5 0-12.82-8.68-21.32-8.67-8.5-21.5-8.5-12.82 0-21.32 8.68-8.5 8.67-8.5 21.5 0 12.82 8.68 21.32 8.67 8.5 21.5 8.5 12.82 0 21.32-8.68ZM454-348h60v-224h-60v224Zm26-122Z"/></symbol>
+  <symbol id="i-keyboard_arrow_down" viewBox="0 -960 960 960"><path d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"/></symbol>
+</svg>
 <div class="wrap">
   <header>
     <div>
       <h1>__TITLE__</h1>
       <div class="sub" id="meta"></div>
     </div>
-    <button class="btn tonal" id="theme" type="button" aria-label="配色の切り替え">配色: 自動</button>
+    <button class="btn tonal" id="theme" type="button" aria-label="配色の切り替え"></button>
   </header>
 
   <div id="warnings"></div>
@@ -201,8 +220,8 @@ footer p { margin: 4px 0; }
     <div class="group"><label for="proj">プロジェクト</label><select id="proj"></select></div>
     <div class="group"><label for="model">モデル</label><select id="model"></select></div>
     <div class="segmented" role="group" aria-label="指標">
-      <button type="button" data-metric="cost" aria-pressed="true">金額(USD)</button>
-      <button type="button" data-metric="tokens" aria-pressed="false">トークン</button>
+      <button type="button" data-metric="cost" aria-pressed="true"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>金額(USD)</button>
+      <button type="button" data-metric="tokens" aria-pressed="false"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>トークン</button>
     </div>
   </div>
 
@@ -245,6 +264,11 @@ function sv(tag, attrs, parent) {
   for (var k in attrs) { if (k === 'text') e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
   if (parent) parent.appendChild(e);
   return e;
+}
+function icon(name, cls) {
+  var s = sv('svg', { 'class': 'ic' + (cls ? ' ' + cls : ''), 'aria-hidden': 'true', focusable: 'false' });
+  sv('use', { href: '#i-' + name }, s);
+  return s;
 }
 function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
 var nfInt = new Intl.NumberFormat('ja-JP');
@@ -461,7 +485,7 @@ function hBars(host, rows, ariaLabel, total) {
 function tableView(headers, rowsData, opts) {
   opts = opts || {};
   var det = el('details');
-  det.appendChild(el('summary', { text: '表で見る' }));
+  det.appendChild(el('summary', null, [icon('keyboard_arrow_down'), '表で見る']));
   var wrap = el('div', { 'class': 'twrap' });
   var t = el('table');
   var tr = el('tr');
@@ -671,7 +695,12 @@ function renderTurns(rows) {
   if (D.meta.promptChars) cols.push([null, 'プロンプト', 1]);
   var t = el('table'), tr = el('tr');
   cols.forEach(function (cl) {
-    var th = el('th', { 'class': (cl[2] ? 'l' : 'num') + (cl[0] ? ' sortable' : ''), text: cl[1] + (cl[0] && cl[0] === key ? (dir < 0 ? ' ▼' : ' ▲') : '') });
+    var th = el('th', { 'class': (cl[2] ? 'l' : 'num') + (cl[0] ? ' sortable' : '') });
+    if (cl[0]) {
+      var on = cl[0] === key, arrow = icon(on && dir < 0 ? 'arrow_downward' : 'arrow_upward', on ? '' : 'off');
+      if (cl[2]) { th.appendChild(document.createTextNode(cl[1])); th.appendChild(arrow); }
+      else { th.appendChild(arrow); th.appendChild(document.createTextNode(cl[1])); }
+    } else th.textContent = cl[1];
     if (cl[0]) {
       th.setAttribute('role', 'button'); th.tabIndex = 0;
       var go = function () { if (state.sort === cl[0]) state.dir = -state.dir; else { state.sort = cl[0]; state.dir = cl[2] ? 1 : -1; } render(); };
@@ -699,9 +728,9 @@ function renderTurns(rows) {
   var wrap = el('div', { 'class': 'twrap', style: 'max-height:none' }); wrap.appendChild(t); c.appendChild(wrap);
   if (list.length > state.turnLimit) {
     var more = el('div', { 'class': 'more' });
-    var b1 = el('button', { 'class': 'btn', type: 'button', text: 'さらに 50 件表示' });
+    var b1 = el('button', { 'class': 'btn', type: 'button' }, [icon('keyboard_arrow_down'), 'さらに 50 件表示']);
     b1.onclick = function () { state.turnLimit += 50; render(); };
-    var b2 = el('button', { 'class': 'btn', type: 'button', text: 'すべて表示' });
+    var b2 = el('button', { 'class': 'btn', type: 'button' }, [icon('keyboard_arrow_down'), 'すべて表示']);
     b2.onclick = function () { state.turnLimit = list.length; render(); };
     more.appendChild(b1); more.appendChild(b2);
     more.appendChild(el('span', { text: state.turnLimit + ' / ' + nfInt.format(list.length) + ' 件を表示中' }));
@@ -715,13 +744,13 @@ function init() {
     (D.meta.first ? D.meta.first + ' 〜 ' + D.meta.last : 'データなし') + ' ／ 集計タイムゾーン: ' + D.meta.tz +
     ' ／ 生成: ' + D.meta.generated;
   var w = document.getElementById('warnings');
-  D.meta.warnings.forEach(function (t) { w.appendChild(el('div', { 'class': 'warn', role: 'alert', text: t })); });
+  D.meta.warnings.forEach(function (t) { w.appendChild(el('div', { 'class': 'warn', role: 'alert' }, [icon('warning'), el('span', { text: t })])); });
   var foot = document.getElementById('foot');
   D.meta.notes.forEach(function (t) { foot.appendChild(el('p', { text: t })); });
 
   var rg = document.getElementById('ranges');
   [['all', '全期間'], ['month', '今月'], ['7', '直近7日'], ['30', '直近30日'], ['90', '直近90日']].forEach(function (r) {
-    var b = el('button', { 'class': 'chip', type: 'button', 'data-range': r[0], text: r[1], 'aria-pressed': r[0] === state.range ? 'true' : 'false' });
+    var b = el('button', { 'class': 'chip', type: 'button', 'data-range': r[0], 'aria-pressed': r[0] === state.range ? 'true' : 'false' }, [icon('check', 'chk'), r[1]]);
     b.onclick = function () { state.range = r[0]; state.from = state.to = ''; document.getElementById('from').value = ''; document.getElementById('to').value = ''; sync(); };
     rg.appendChild(b);
   });
@@ -745,12 +774,12 @@ function init() {
     b.onclick = function () { state.metric = b.getAttribute('data-metric'); sync(); };
   });
 
-  var themeBtn = document.getElementById('theme'), order = ['auto', 'light', 'dark'], labels = { auto: '自動', light: 'ライト', dark: 'ダーク' };
+  var themeBtn = document.getElementById('theme'), order = ['auto', 'light', 'dark'], labels = { auto: '自動', light: 'ライト', dark: 'ダーク' }, icons = { auto: 'brightness_auto', light: 'light_mode', dark: 'dark_mode' };
   var cur = 'auto';
   try { cur = localStorage.getItem('usage-theme') || 'auto'; } catch (e) {}
   function applyTheme() {
     if (cur === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', cur);
-    themeBtn.textContent = '配色: ' + labels[cur];
+    clear(themeBtn); themeBtn.appendChild(icon(icons[cur])); themeBtn.appendChild(document.createTextNode('配色: ' + labels[cur]));
   }
   themeBtn.onclick = function () {
     cur = order[(order.indexOf(cur) + 1) % 3];
