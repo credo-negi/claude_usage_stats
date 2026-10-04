@@ -67,7 +67,7 @@ body {
   font: 400 14px/20px Roboto, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", Meiryo, sans-serif;
   letter-spacing: .25px;
 }
-.wrap { max-width: 1180px; margin: 0 auto; padding: 16px 16px 64px; }
+.wrap { max-width: 1480px; margin: 0 auto; padding: 16px 16px 64px; }
 header {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   padding: 8px 0 12px;
@@ -109,14 +109,31 @@ button, select, input { font: inherit; color: var(--on-surface); letter-spacing:
 .segmented > button:last-child { border-radius: 0 20px 20px 0; }
 .segmented > button:hover { background: var(--state-hover); }
 .segmented > button[aria-pressed="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
-.btn:focus-visible, .chip:focus-visible, .segmented > button:focus-visible, select:focus-visible, input:focus-visible,
+.btn:focus-visible, .icon-btn:focus-visible, .chip:focus-visible, .segmented > button:focus-visible, select:focus-visible, input:focus-visible,
 summary:focus-visible, .hit:focus-visible, th.sortable:focus-visible {
   outline: 2px solid var(--primary); outline-offset: 2px;
 }
 
-.filters { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; margin: 8px 0 20px; }
+/* 2 カラム: 左に表示設定のサイドパネル、右にレポート。狭い幅ではパネルを左から開閉するサイドシートにする */
+.layout { display: grid; grid-template-columns: 256px minmax(0, 1fr); gap: 32px; align-items: start; }
+.main { min-width: 0; }
+.side {
+  position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto;
+  padding: 8px 8px 8px 0;   /* 背景・枠なし。ページの背景に溶け込ませる（Gmail / Google ドライブの左ナビと同様） */
+  display: flex; flex-direction: column; gap: 24px;
+}
+.side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.side-head h2 { margin: 0; }
+.side-close, .side-open { display: none; }
+.icon-btn {
+  align-items: center; justify-content: center; width: 40px; height: 40px; margin: -8px -8px -8px 0; padding: 0;
+  background: transparent; border: 0; border-radius: 50%; color: var(--on-surface-variant); cursor: pointer;
+}
+.icon-btn:hover { background: var(--state-hover); }
+.icon-btn:active { background: var(--state-press); }
+.icon-btn .ic { width: 24px; height: 24px; }
+.scrim { display: none; }
 .group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.group > label { color: var(--on-surface-variant); font-size: 12px; letter-spacing: .4px; }
 /* outlined テキストフィールド風のセレクト・日付入力 */
 select, input[type="date"] {
   background: transparent; border: 1px solid var(--outline); border-radius: 4px;
@@ -125,6 +142,30 @@ select, input[type="date"] {
 select:hover, input[type="date"]:hover { border-color: var(--on-surface); }
 select:focus, input[type="date"]:focus { border-color: var(--primary); }
 select option { background: var(--surface-high); color: var(--on-surface); }
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; border: 0; padding: 0; margin: 0; }
+.field > label, .field > legend { color: var(--on-surface-variant); font-size: 12px; line-height: 16px; letter-spacing: .4px; font-weight: 500; padding: 0; }
+.field > legend { margin-bottom: 8px; }   /* fieldset の legend は flex の gap が効かないので余白を補う */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.dates { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: center; }
+.dates input { min-width: 0; padding: 0 8px; }
+.side select { width: 100%; max-width: none; }
+.side .segmented { display: flex; }
+.side .segmented > button { flex: 1 1 0; padding: 0 8px; min-width: 0; }
+@media (max-width: 900px) {
+  .layout { display: block; }
+  .side-close, .side-open { display: inline-flex; }
+  .side {
+    position: fixed; z-index: 30; top: 0; bottom: 0; left: 0; width: min(320px, 88vw); max-height: none;
+    padding: 16px; background: var(--surface-low); border-radius: 0 16px 16px 0; box-shadow: var(--shadow);
+    transform: translateX(-100%); visibility: hidden;
+    transition: transform .25s cubic-bezier(.2, 0, 0, 1), visibility 0s linear .25s;
+  }
+  .side-open-state .side { transform: none; visibility: visible; transition: transform .25s cubic-bezier(.2, 0, 0, 1), visibility 0s; }
+  .scrim { display: block; position: fixed; z-index: 20; inset: 0; background: rgba(0,0,0,.4); opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s linear .25s; }
+  .side-open-state .scrim { opacity: 1; visibility: visible; transition: opacity .25s, visibility 0s; }
+  .side-open-state { overflow: hidden; }
+}
+@media (prefers-reduced-motion: reduce) { .side, .scrim { transition: none !important; } }
 .warn {
   background: var(--tertiary-container); color: var(--on-tertiary-container); border-radius: 12px;
   padding: 12px 16px; margin: 0 0 12px; font-size: 14px; display: flex; gap: 12px; align-items: flex-start;
@@ -185,7 +226,7 @@ tr:last-child td { border-bottom: 0; }
 footer { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 16px; letter-spacing: .4px; }
 footer p { margin: 4px 0; }
 .busy { opacity: .6; }
-@media print { .filters, .btn, details { display: none; } body { background: #fff; } }
+@media print { .side, .scrim, .btn, details { display: none; } .layout { display: block; } body { background: #fff; } }
 </style>
 </head>
 <body>
@@ -199,6 +240,8 @@ footer p { margin: 4px 0; }
   <symbol id="i-arrow_downward" viewBox="0 -960 960 960"><path d="M450-800v526L202-522l-42 42 320 320 320-320-42-42-248 248v-526h-60Z"/></symbol>
   <symbol id="i-warning" viewBox="0 -960 960 960"><path d="m40-120 440-760 440 760H40Zm104-60h672L480-760 144-180Zm361.5-65.68q8.5-8.67 8.5-21.5 0-12.82-8.68-21.32-8.67-8.5-21.5-8.5-12.82 0-21.32 8.68-8.5 8.67-8.5 21.5 0 12.82 8.68 21.32 8.67 8.5 21.5 8.5 12.82 0 21.32-8.68ZM454-348h60v-224h-60v224Zm26-122Z"/></symbol>
   <symbol id="i-keyboard_arrow_down" viewBox="0 -960 960 960"><path d="M480-344 240-584l43-43 197 197 197-197 43 43-240 240Z"/></symbol>
+  <symbol id="i-close" viewBox="0 -960 960 960"><path d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"/></symbol>
+  <symbol id="i-tune" viewBox="0 -960 960 960"><path d="M120-720h300v60H120v-60Zm420 0h300v60H540v-60ZM120-450h120v60H120v-60Zm240 0h480v60H360v-60ZM120-180h360v60H120v-60Zm480 0h240v60H600v-60Z"/><circle cx="480" cy="-690" r="70"/><circle cx="300" cy="-420" r="70"/><circle cx="540" cy="-150" r="70"/></symbol>
 </svg>
 <div class="wrap">
   <header>
@@ -206,37 +249,54 @@ footer p { margin: 4px 0; }
       <h1>__TITLE__</h1>
       <div class="sub" id="meta"></div>
     </div>
-    <button class="btn tonal" id="theme" type="button" aria-label="配色の切り替え"></button>
+    <div class="group">
+      <button class="btn side-open" id="side-open" type="button" aria-controls="side" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-tune"/></svg>表示設定</button>
+      <button class="btn tonal" id="theme" type="button" aria-label="配色の切り替え"></button>
+    </div>
   </header>
 
   <div id="warnings"></div>
 
-  <div class="filters" role="group" aria-label="絞り込み">
-    <div class="group" id="ranges" role="group" aria-label="期間"></div>
-    <div class="group">
-      <label for="from">期間指定</label>
-      <input type="date" id="from"> <span class="sub">〜</span> <input type="date" id="to">
-    </div>
-    <div class="group"><label for="proj">プロジェクト</label><select id="proj"></select></div>
-    <div class="group"><label for="model">モデル</label><select id="model"></select></div>
-    <div class="segmented" role="group" aria-label="指標">
-      <button type="button" data-metric="cost" aria-pressed="true"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>金額(USD)</button>
-      <button type="button" data-metric="tokens" aria-pressed="false"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>トークン</button>
-    </div>
-  </div>
+  <div class="layout">
+    <aside class="side" id="side" aria-labelledby="side-title">
+      <div class="side-head">
+        <h2 id="side-title">表示設定</h2>
+        <button class="icon-btn side-close" id="side-close" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <fieldset class="field"><legend>期間</legend><div class="chips" id="ranges"></div></fieldset>
+      <fieldset class="field">
+        <legend>期間指定</legend>
+        <div class="dates">
+          <input type="date" id="from" aria-label="開始日"><span class="sub" aria-hidden="true">〜</span><input type="date" id="to" aria-label="終了日">
+        </div>
+      </fieldset>
+      <div class="field"><label for="proj">プロジェクト</label><select id="proj"></select></div>
+      <div class="field"><label for="model">モデル</label><select id="model"></select></div>
+      <fieldset class="field">
+        <legend>指標</legend>
+        <div class="segmented">
+          <button type="button" data-metric="cost" aria-pressed="true"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>金額(USD)</button>
+          <button type="button" data-metric="tokens" aria-pressed="false"><svg class="ic chk" aria-hidden="true"><use href="#i-check"/></svg>トークン</button>
+        </div>
+      </fieldset>
+    </aside>
+    <div class="scrim" id="scrim"></div>
 
-  <div id="root">
-    <div class="hero">
-      <div><div class="lbl">概算利用金額（USD）</div><div class="big" id="hero"></div><div class="sub" id="hero-sub"></div></div>
-    </div>
-    <div class="kpis" id="kpis"></div>
-    <div class="grid">
-      <section class="card wide" id="c-day"></section>
-      <section class="card" id="c-month"></section>
-      <section class="card" id="c-model"></section>
-      <section class="card wide" id="c-proj"></section>
-      <section class="card wide" id="c-kind"></section>
-      <section class="card wide" id="c-turn"></section>
+    <div class="main">
+      <div id="root">
+        <div class="hero">
+          <div><div class="lbl">概算利用金額（USD）</div><div class="big" id="hero"></div><div class="sub" id="hero-sub"></div></div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="grid">
+          <section class="card wide" id="c-day"></section>
+          <section class="card" id="c-month"></section>
+          <section class="card" id="c-model"></section>
+          <section class="card wide" id="c-proj"></section>
+          <section class="card wide" id="c-kind"></section>
+          <section class="card wide" id="c-turn"></section>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -788,13 +848,28 @@ function init() {
   };
   applyTheme();
 
+  /* 狭い幅ではサイドパネルをサイドシートとして開閉する */
+  var side = document.getElementById('side'), openBtn = document.getElementById('side-open'), root = document.documentElement;
+  var narrow = window.matchMedia('(max-width: 900px)');
+  function setSheet(open) {
+    root.classList.toggle('side-open-state', open);
+    openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) document.getElementById('side-close').focus(); else if (side.contains(document.activeElement)) openBtn.focus();
+  }
+  openBtn.onclick = function () { setSheet(true); };
+  document.getElementById('side-close').onclick = function () { setSheet(false); };
+  document.getElementById('scrim').onclick = function () { setSheet(false); };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('side-open-state')) setSheet(false); });
+  var onNarrow = function () { if (!narrow.matches) { root.classList.remove('side-open-state'); openBtn.setAttribute('aria-expanded', 'false'); } };
+  if (narrow.addEventListener) narrow.addEventListener('change', onNarrow); else narrow.addListener(onNarrow);
+
   var last = 0, timer = null;
   if (window.ResizeObserver) {
     new ResizeObserver(function (es) {
       var w = Math.round(es[0].contentRect.width);
       if (w === last) return; last = w;
       clearTimeout(timer); timer = setTimeout(render, 120);
-    }).observe(document.querySelector('.wrap'));
+    }).observe(document.querySelector('.main'));
   }
   sync();
 }
