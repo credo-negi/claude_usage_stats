@@ -297,6 +297,21 @@ class StoreTest(unittest.TestCase):
 
 
 class HtmlTest(unittest.TestCase):
+    def test_model_colors_group_by_family_and_vary_tone_by_version(self):
+        models = ["claude-sonnet-5-5", "claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5", "claude-opus-4-6 (fast)",
+                  "claude-opus-4-6"]
+        weights = [50, 30, 20, 10, 8, 5]            # sonnet 合計 70 > opus 43 > haiku 10
+        order, colors = report_html.assign_model_colors(models, weights)
+        self.assertEqual(colors, [[0, 0], [1, 0], [0, 1], [2, 0], [1, 1], [1, 2]])    # 最多の系統が色相 0（primary）
+        self.assertEqual([models[i] for i in order][:2], ["claude-sonnet-5-5", "claude-sonnet-5"])   # 系統ごとに連続
+        self.assertEqual(sorted(order), list(range(len(models))))
+        self.assertEqual(report_html.model_family("claude-3-7-sonnet"), "sonnet")
+        self.assertEqual(report_html.model_family("claude-opus-4-6 (fast)"), "opus")
+        # 色を割り当てきれないものは None（その他）
+        many = ["claude-opus-%d" % i for i in range(8)]
+        _, c = report_html.assign_model_colors(many, [100 - i for i in range(8)])
+        self.assertEqual([x is None for x in c], [False] * 5 + [True] * 3)
+
     def test_embedded_payload_is_safe_and_consistent(self):
         with tempfile.TemporaryDirectory() as tmp:
             cfg = make_config(tmp)

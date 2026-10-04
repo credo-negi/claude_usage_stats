@@ -62,6 +62,15 @@ primary と同じ HCT（ライト: トーン 50、ダーク: トーン 74、彩�
 | `--s8` | 120 | `#707d2e` | `#afbe66` |
 | `--s-other` | 29（彩度 6） | `#a29390` | `#7d6f6c` |
 
+## モデルの色分け
+
+モデルは系統（opus / sonnet / haiku / fable …、`report_html.model_family`）ごとに色相、同一系統のバージョン違いはトーンで区別する。
+
+- 色相: 全期間の金額が最も大きい系統が `--s1`（primary 系）、以降は金額順に `--s2`〜`--s8`。9 系統目以降は `--s-other`。
+- トーン: 系統内で金額が大きい順に、基準色へ `--tone-mix`（ライト: 白 / ダーク: 黒）を 0 / 16 / 30 / 42 / 52 % 混ぜる（`color-mix(in oklab, …)`）。
+  1 系統 6 バージョン目以降は `--s-other`。
+- 割り当ては絞り込みで変わらない（`build_payload` が `modelColor` として埋め込む）。
+
 ## 再生成
 
 Python の [`materialyoucolor`](https://pypi.org/project/materialyoucolor/) で再現できる（`spec_version="2021"` を指定する。既定は 2025 仕様で彩度が異なる）。

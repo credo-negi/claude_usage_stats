@@ -20,6 +20,7 @@
   /* チャートのカテゴリ色: primary と同じ HCT（トーン50・彩度36〜40）で色相だけ振ったもの */
   --s1: #ad6355; --s2: #4e79b1; --s3: #458453; --s4: #967117;
   --s5: #9167a6; --s6: #008583; --s7: #b4607f; --s8: #707d2e; --s-other: #a29390;
+  --tone-mix: #ffffff;   /* バージョン違いのトーン: ライトは白へ（淡く）、ダークは黒へ（暗く） */
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 2px 6px 2px rgba(0,0,0,.15);
 }
 @media (prefers-color-scheme: dark) {
@@ -35,6 +36,7 @@
     --state-hover: rgba(255,180,166,.08); --state-press: rgba(255,180,166,.12);
     --s1: #f79f8f; --s2: #8eb8f4; --s3: #83c58d; --s4: #dbb052;
     --s5: #d4a5e9; --s6: #61c6c3; --s7: #f2a0bd; --s8: #afbe66; --s-other: #7d6f6c;
+    --tone-mix: #000000;
     --shadow: 0 1px 3px rgba(0,0,0,.6), 0 4px 8px 3px rgba(0,0,0,.4);
   }
 }
@@ -50,6 +52,7 @@
   --state-hover: rgba(255,180,166,.08); --state-press: rgba(255,180,166,.12);
   --s1: #f79f8f; --s2: #8eb8f4; --s3: #83c58d; --s4: #dbb052;
   --s5: #d4a5e9; --s6: #61c6c3; --s7: #f2a0bd; --s8: #afbe66; --s-other: #7d6f6c;
+  --tone-mix: #000000;
   --shadow: 0 1px 3px rgba(0,0,0,.6), 0 4px 8px 3px rgba(0,0,0,.4);
 }
 :root {   /* チャート・表が参照する別名 */
@@ -228,7 +231,7 @@ footer p { margin: 4px 0; }
 'use strict';
 var D = JSON.parse(document.getElementById('data').textContent);
 var SVGNS = 'http://www.w3.org/2000/svg';
-var MAX_SLOTS = 8;
+var TONE_MIX = [0, 16, 30, 42, 52];   /* 同一系統のバージョン違い: 基準色に --tone-mix を混ぜる割合(%) */
 
 /* ---------- 小さなユーティリティ ---------- */
 function el(tag, attrs, kids) {
@@ -291,8 +294,14 @@ function truncate(str, maxPx, size) {
   return str.slice(0, head) + '…' + str.slice(str.length - tail);
 }
 
-/* ---------- 色: モデルは全期間の金額順で固定スロット（絞り込んでも塗り替えない） ---------- */
-function slotVar(i) { return i < MAX_SLOTS ? 'var(--s' + (i + 1) + ')' : 'var(--s-other)'; }
+/* ---------- 色: モデルの系統(opus / sonnet …)ごとに色相、バージョン違いはトーンで区別。
+   割り当ては全期間の金額順で固定（絞り込んでも塗り替えない）。最も使われた系統が --s1(primary 系) ---------- */
+function modelColor(m) {
+  var c = D.modelColor[m];
+  if (!c) return 'var(--s-other)';
+  var base = 'var(--s' + (c[0] + 1) + ')';
+  return c[1] ? 'color-mix(in oklab, ' + base + ', var(--tone-mix) ' + TONE_MIX[c[1]] + '%)' : base;
+}
 
 /* ---------- ツールチップ ---------- */
 var tip = document.getElementById('tip');
@@ -475,13 +484,13 @@ function cardHead(card, title, hint) {
 
 /* ---------- 描画 ---------- */
 function seriesFor(rows, keyOf, catIndex, ncats) {
-  /* モデルを固定スロットの系列に。9 番目以降は「その他」に畳む */
+  /* モデルを固定スロットの系列に。色を割り当てきれないモデルは「その他」に畳む */
   var used = {};
   rows.forEach(function (f) { used[f[2]] = true; });
   var ids = D.modelOrder.filter(function (m) { return used[m]; });
-  var named = ids.filter(function (m) { return D.modelSlot[m] < MAX_SLOTS; });
-  var rest = ids.filter(function (m) { return D.modelSlot[m] >= MAX_SLOTS; });
-  var series = named.map(function (m) { return { id: m, name: D.models[m], color: slotVar(D.modelSlot[m]) }; });
+  var named = ids.filter(function (m) { return D.modelColor[m]; });
+  var rest = ids.filter(function (m) { return !D.modelColor[m]; });
+  var series = named.map(function (m) { return { id: m, name: D.models[m], color: modelColor(m) }; });
   if (rest.length) series.push({ id: -1, name: 'その他 (' + rest.length + ' モデル)', color: 'var(--s-other)', rest: rest });
   var data = series.map(function () { var a = new Array(ncats); for (var i = 0; i < ncats; i++) a[i] = 0; return a; });
   var pos = {};
@@ -585,7 +594,7 @@ function renderAll() {
   cardHead(c, 'モデル別', metricName());
   host = el('div'); c.appendChild(host);
   hBars(host, mrows.map(function (r) {
-    return { label: D.models[r.id], value: r.o.v, color: slotVar(D.modelSlot[r.id]),
+    return { label: D.models[r.id], value: r.o.v, color: modelColor(r.id),
       extra: [{ name: 'API呼び出し', value: nfInt.format(r.o.calls) }, { name: 'トークン', value: tokFmt(r.o.tok) }, { name: '概算金額', value: money(r.o.cost) }] };
   }), 'モデル別の' + metricName(), mrows.reduce(function (a, r) { return a + r.o.v; }, 0));
   c.appendChild(tableView([{ text: 'モデル', left: true }, { text: 'API呼び出し' }, { text: 'トークン' }, { text: '概算金額' }],

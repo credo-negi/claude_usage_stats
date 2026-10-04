@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 from . import __version__
 from .aggregate import Report
@@ -20,8 +21,45 @@ def _r(v: float) -> float:
     return round(v, 6)
 
 
+MAX_FAMILIES = 8        # 色相の数（CSS の --s1〜--s8）
+MAX_TONES = 5           # 同一系統内のトーンの数。超えたモデルは「その他」色
+
+
+def model_family(model: str) -> str:
+    """モデル名から系統名（opus / sonnet / haiku / fable …）を取り出す。数字・fast 表記は無視する。"""
+    for tok in re.split(r"[^a-z0-9]+", model.lower()):
+        if tok and tok not in ("claude", "fast") and not tok.isdigit():
+            return tok
+    return model
+
+
+def assign_model_colors(models: list[str], weights: list[float]) -> tuple[list[int], list]:
+    """系統ごとに色相、バージョン違いにトーンを割り当てる。
+
+    models は weights（金額）の大きい順。最も使われた系統が 0 番（primary）、以降は金額順。
+    系統内でも金額の大きいモデルが 0 番（基準トーン）で、以降は段階的に淡く／暗くなる。
+    戻り値: (系統ごとにまとめた並び順, モデルごとの [色相番号, トーン番号]。割り当て外は None)
+    """
+    fam_weight: dict[str, float] = {}
+    members: dict[str, list[int]] = {}
+    for i, (m, w) in enumerate(zip(models, weights)):
+        f = model_family(m)
+        fam_weight[f] = fam_weight.get(f, 0.0) + w
+        members.setdefault(f, []).append(i)
+    families = sorted(fam_weight, key=lambda f: -fam_weight[f])      # sorted は安定。同額なら出現順
+    colors: list = [None] * len(models)
+    order: list[int] = []
+    for hue, f in enumerate(families):
+        for tone, i in enumerate(members[f]):
+            order.append(i)
+            if hue < MAX_FAMILIES and tone < MAX_TONES:
+                colors[i] = [hue, tone]
+    return order, colors
+
+
 def build_payload(rep: Report) -> dict:
     models_order = list(rep.models.keys())                       # 金額の大きい順
+    order, model_color = assign_model_colors(models_order, [b.cost for b in rep.models.values()])
     model_id = {m: i for i, m in enumerate(models_order)}
     projects = list(rep.projects.keys())
     proj_id = {p: i for i, p in enumerate(projects)}
@@ -68,8 +106,8 @@ def build_payload(rep: Report) -> dict:
             ],
         },
         "models": models_order,
-        "modelOrder": list(range(len(models_order))),
-        "modelSlot": list(range(len(models_order))),
+        "modelOrder": order,
+        "modelColor": model_color,
         "modelPrice": model_price,
         "projects": [{"path": p, "label": rep.project_labels[p]} for p in projects],
         "days": days,
